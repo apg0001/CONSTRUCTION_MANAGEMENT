@@ -1,0 +1,31 @@
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env*.local
+
+# Backend
+backend/.env
+backend/.env.local
+backend/.env*.local
+backend/__pycache__/
+backend/venv/
+backend/env/
+backend/*.egg-info
+backend/.pytest_cache/
+backend/test.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+build/
+*.tar.gz
+*.zip
