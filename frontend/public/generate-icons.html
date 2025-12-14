@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PWA 아이콘 생성기</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            margin: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px 5px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>PWA 아이콘 생성기</h1>
+    <p>아래 버튼을 클릭하여 아이콘을 생성하고 다운로드하세요.</p>
+    
+    <div>
+        <canvas id="icon192" width="192" height="192"></canvas>
+        <canvas id="icon512" width="512" height="512"></canvas>
+    </div>
+    
+    <div>
+        <button onclick="generateIcons()">아이콘 생성 및 다운로드</button>
+    </div>
+
+    <script>
+        function generateIcons() {
+            // 192x192 아이콘
+            const canvas192 = document.getElementById('icon192');
+            const ctx192 = canvas192.getContext('2d');
+            
+            // 배경
+            ctx192.fillStyle = '#3b82f6';
+            ctx192.fillRect(0, 0, 192, 192);
+            
+            // 원 그리기
+            ctx192.fillStyle = 'white';
+            ctx192.beginPath();
+            ctx192.arc(96, 96, 70, 0, 2 * Math.PI);
+            ctx192.fill();
+            
+            // 텍스트
+            ctx192.fillStyle = '#3b82f6';
+            ctx192.font = 'bold 80px Arial';
+            ctx192.textAlign = 'center';
+            ctx192.textBaseline = 'middle';
+            ctx192.fillText('건', 96, 96);
+            
+            // 다운로드
+            canvas192.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'icon-192.png';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+            
+            // 512x512 아이콘
+            const canvas512 = document.getElementById('icon512');
+            const ctx512 = canvas512.getContext('2d');
+            
+            // 배경
+            ctx512.fillStyle = '#3b82f6';
+            ctx512.fillRect(0, 0, 512, 512);
+            
+            // 원 그리기
+            ctx512.fillStyle = 'white';
+            ctx512.beginPath();
+            ctx512.arc(256, 256, 180, 0, 2 * Math.PI);
+            ctx512.fill();
+            
+            // 텍스트
+            ctx512.fillStyle = '#3b82f6';
+            ctx512.font = 'bold 200px Arial';
+            ctx512.textAlign = 'center';
+            ctx512.textBaseline = 'middle';
+            ctx512.fillText('건', 256, 256);
+            
+            // 다운로드
+            setTimeout(() => {
+                canvas512.toBlob(function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'icon-512.png';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                });
+            }, 500);
+            
+            alert('아이콘이 생성되었습니다! 다운로드된 파일을 frontend/public/ 디렉토리에 저장하세요.');
+        }
+        
+        // 페이지 로드 시 미리보기 생성
+        window.onload = function() {
+            generateIcons();
+        };
+    </script>
+</body>
+</html>
+

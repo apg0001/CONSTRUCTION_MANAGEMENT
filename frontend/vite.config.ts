@@ -89,7 +89,9 @@ export default defineConfig(({ mode }) => ({
       devOptions: {
         enabled: true,
         type: 'module'
-      }
+      },
+      // PWA 설치를 위한 추가 설정
+      injectRegister: 'auto'
     }),
   ],
   server: {
