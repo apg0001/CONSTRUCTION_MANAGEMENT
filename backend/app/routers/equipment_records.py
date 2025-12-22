@@ -43,7 +43,7 @@ def create_equipment_record(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    """Create a new equipment record"""
+    """Create a new equipment record or update existing one (accumulate quantity)"""
     # Role-based access control
     if current_user.get("role") == "manager":
         user_team_id = current_user.get("team_id")
@@ -53,19 +53,34 @@ def create_equipment_record(
                 detail="Managers can only create records for their own team"
             )
     
-    db_equipment_record = EquipmentRecord(
-        id=str(uuid.uuid4()),
-        work_date=equipment_record.work_date,
-        site_name=equipment_record.site_name,
-        equipment_type=equipment_record.equipment_type,
-        quantity=equipment_record.quantity,
-        team_id=equipment_record.team_id,
-        created_by=equipment_record.created_by,
-    )
-    db.add(db_equipment_record)
-    db.commit()
-    db.refresh(db_equipment_record)
-    return db_equipment_record
+    # 같은 날짜, 같은 장비 타입, 같은 팀의 기존 레코드 찾기
+    existing_record = db.query(EquipmentRecord).filter(
+        EquipmentRecord.work_date == equipment_record.work_date,
+        EquipmentRecord.equipment_type == equipment_record.equipment_type,
+        EquipmentRecord.team_id == equipment_record.team_id
+    ).first()
+    
+    if existing_record:
+        # 기존 레코드가 있으면 수량 누적
+        existing_record.quantity += equipment_record.quantity
+        db.commit()
+        db.refresh(existing_record)
+        return existing_record
+    else:
+        # 없으면 새로 생성
+        db_equipment_record = EquipmentRecord(
+            id=str(uuid.uuid4()),
+            work_date=equipment_record.work_date,
+            site_name=equipment_record.site_name,
+            equipment_type=equipment_record.equipment_type,
+            quantity=equipment_record.quantity,
+            team_id=equipment_record.team_id,
+            created_by=equipment_record.created_by,
+        )
+        db.add(db_equipment_record)
+        db.commit()
+        db.refresh(db_equipment_record)
+        return db_equipment_record
 
 
 @router.get("/{record_id}", response_model=EquipmentRecordResponse)
