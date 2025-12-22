@@ -9,7 +9,7 @@ from app.models.work_record import Base as WorkRecordBase
 from app.models.equipment_record import Base as EquipmentRecordBase
 from app.routers import auth, users, teams, workers, work_records, equipment_records
 from app.init_data import init_default_data
-from app.migrations import migrate_add_notes_column, migrate_remove_site_name_from_equipment
+from app.migrations import migrate_add_notes_column, migrate_remove_site_name_from_equipment, migrate_remove_site_name_from_work_records
 
 # Create tables
 UserBase.metadata.create_all(bind=engine)
@@ -26,6 +26,11 @@ except Exception as e:
 
 try:
     migrate_remove_site_name_from_equipment()
+except Exception as e:
+    print(f"마이그레이션 실행 중 오류 (무시 가능): {e}")
+
+try:
+    migrate_remove_site_name_from_work_records()
 except Exception as e:
     print(f"마이그레이션 실행 중 오류 (무시 가능): {e}")
 

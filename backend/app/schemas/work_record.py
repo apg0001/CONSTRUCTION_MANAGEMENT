@@ -5,7 +5,6 @@ from datetime import datetime, date
 class WorkRecordCreate(BaseModel):
     worker_id: str
     worker_name: str
-    site_name: str
     work_date: date
     work_hours: float
     notes: str | None = None
@@ -16,7 +15,6 @@ class WorkRecordCreate(BaseModel):
 class WorkRecordUpdate(BaseModel):
     worker_id: str
     worker_name: str
-    site_name: str
     work_hours: float
     notes: str | None = None
 
@@ -25,7 +23,6 @@ class WorkRecordResponse(BaseModel):
     id: str
     worker_id: str
     worker_name: str
-    site_name: str
     work_date: date
     work_hours: float
     notes: str | None

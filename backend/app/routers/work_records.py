@@ -66,7 +66,6 @@ def create_work_record(
         id=str(uuid.uuid4()),
         worker_id=work_record.worker_id,
         worker_name=work_record.worker_name,
-        site_name=work_record.site_name,
         work_date=work_record.work_date,
         work_hours=work_record.work_hours,
         notes=work_record.notes,
@@ -127,7 +126,6 @@ def update_work_record(
     # Update fields
     db_record.worker_id = work_record.worker_id
     db_record.worker_name = work_record.worker_name
-    db_record.site_name = work_record.site_name
     db_record.work_hours = work_record.work_hours
     db_record.notes = work_record.notes
     db_record.updated_at = datetime.utcnow()

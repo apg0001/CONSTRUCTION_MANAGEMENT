@@ -53,6 +53,9 @@ def create_equipment_record(
                 detail="Managers can only create records for their own team"
             )
     
+    # Log for debugging
+    print(f"Creating equipment record - team_id: {equipment_record.team_id}, equipment_type: {equipment_record.equipment_type}, current_user role: {current_user.get('role')}, current_user team_id: {current_user.get('team_id')}")
+    
     # 같은 날짜, 같은 장비 타입, 같은 팀의 기존 레코드 찾기
     existing_record = db.query(EquipmentRecord).filter(
         EquipmentRecord.work_date == equipment_record.work_date,
@@ -65,6 +68,7 @@ def create_equipment_record(
         existing_record.quantity += equipment_record.quantity
         db.commit()
         db.refresh(existing_record)
+        print(f"Updated existing equipment record - id: {existing_record.id}, team_id: {existing_record.team_id}, quantity: {existing_record.quantity}")
         return existing_record
     else:
         # 없으면 새로 생성
@@ -79,6 +83,7 @@ def create_equipment_record(
         db.add(db_equipment_record)
         db.commit()
         db.refresh(db_equipment_record)
+        print(f"Created new equipment record - id: {db_equipment_record.id}, team_id: {db_equipment_record.team_id}")
         return db_equipment_record
 
 

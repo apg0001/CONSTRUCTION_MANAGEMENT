@@ -308,7 +308,6 @@ export const addWorkRecord = async (
   const requestBody = {
     worker_id: record.workerId,
     worker_name: record.workerName,
-    site_name: record.siteName,
     work_date: record.workDate,
     work_hours: record.workHours,
     notes: record.notes || null,
@@ -330,7 +329,7 @@ export const updateWorkRecord = async (
   const backendUpdates: any = {};
   if (updates.workerId !== undefined) backendUpdates.worker_id = updates.workerId;
   if (updates.workerName !== undefined) backendUpdates.worker_name = updates.workerName;
-  if (updates.siteName !== undefined) backendUpdates.site_name = updates.siteName;
+  // site_name은 더 이상 사용하지 않음
   if (updates.workHours !== undefined) backendUpdates.work_hours = updates.workHours;
   if (updates.notes !== undefined) backendUpdates.notes = updates.notes || null;
   
@@ -421,13 +420,16 @@ export const addEquipmentRecord = async (
   record: Omit<EquipmentRecord, 'id' | 'createdAt' | 'updatedAt'>
 ): Promise<EquipmentRecord> => {
   // Backend expects snake_case, convert from camelCase
-  const response = await apiCall('/equipment-records', 'POST', {
+  const requestBody = {
     work_date: record.workDate,
     equipment_type: record.equipmentType,
     quantity: record.quantity,
     team_id: record.teamId,
     created_by: record.createdBy
-  });
+  };
+  console.log('addEquipmentRecord - requestBody:', requestBody, 'record.teamId:', record.teamId);
+  const response = await apiCall('/equipment-records', 'POST', requestBody);
+  console.log('addEquipmentRecord - response:', response);
   // Convert response from snake_case to camelCase
   return convertEquipmentRecord(response);
 };

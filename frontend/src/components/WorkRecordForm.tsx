@@ -164,7 +164,7 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
       workHours: row.workHours,
       workDate: date,
       notes: notes,
-      teamId: '',
+      teamId: teamId, // teamId prop 사용
       createdBy: ''
     }));
 
@@ -177,7 +177,7 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
           workDate: date,
           equipmentType: equipType,
           quantity: quantity,
-          teamId: '',
+          teamId: teamId, // teamId prop 사용
           createdBy: ''
         });
       }

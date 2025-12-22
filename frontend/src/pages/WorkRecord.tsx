@@ -196,6 +196,17 @@ export default function WorkRecordPage() {
 
     try {
       const teamId = isAdmin ? selectedTeamId : (user?.teamId || '');
+      console.log('handleSaveEquipment - isAdmin:', isAdmin, 'selectedTeamId:', selectedTeamId, 'user?.teamId:', user?.teamId, 'teamId:', teamId);
+      
+      if (!teamId) {
+        if (isAdmin) {
+          toast.error('팀을 선택해주세요');
+        } else {
+          toast.error('팀 정보를 불러올 수 없습니다. 다시 로그인해주세요.');
+        }
+        return;
+      }
+      
       const createdBy = user?.email || '';
       const dateStr = selectedDate.toISOString().split('T')[0];
       const quantity = updates.quantity || 0;
@@ -206,6 +217,7 @@ export default function WorkRecordPage() {
       }
 
       // 항상 추가 (백엔드에서 같은 날짜/같은 장비 타입이면 자동으로 누적)
+      console.log('Adding equipment record with teamId:', teamId, 'updates:', updates);
       await addEquipmentRecord({
         workDate: dateStr,
         equipmentType: updates.equipmentType || editingEquipmentRecord.equipmentType,

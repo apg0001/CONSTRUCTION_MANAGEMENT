@@ -11,7 +11,6 @@ class WorkRecord(Base):
     id = Column(String(36), primary_key=True, index=True)
     worker_id = Column(String(36))
     worker_name = Column(String(255))
-    site_name = Column(String(255))
     work_date = Column(Date, index=True)
     work_hours = Column(Float)
     notes = Column(String(1000))
