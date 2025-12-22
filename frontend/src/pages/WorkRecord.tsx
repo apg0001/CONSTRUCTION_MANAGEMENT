@@ -240,40 +240,83 @@ export default function WorkRecordPage() {
       
       const createdBy = user?.email || '';
       const dateStr = selectedDate.toISOString().split('T')[0];
-      const quantity = updates.quantity || 0;
+      const quantityChange = updates.quantity || 0; // 양수면 증가, 음수면 감소
       const equipmentType = updates.equipmentType || editingEquipmentRecord.equipmentType;
 
-      if (quantity <= 0) {
-        toast.error('수량은 0보다 커야 합니다');
+      if (quantityChange === 0) {
+        toast.error('수량을 입력해주세요');
         return;
       }
 
-      // 기존 기록이 있는지 확인 (같은 날짜, 같은 장비 타입, 같은 팀)
-      const existingRecord = equipmentRecords.find(
-        r => r.equipmentType === equipmentType && 
-             r.workDate === dateStr &&
-             r.teamId === teamId
-      );
-
-      if (existingRecord && existingRecord.id) {
-        // 기존 기록이 있으면 수량을 합산하여 업데이트
-        const newQuantity = existingRecord.quantity + quantity;
-        console.log('Updating existing equipment record:', existingRecord.id, 'new quantity:', newQuantity);
-        await updateEquipmentRecord(existingRecord.id, {
-          quantity: newQuantity
-        });
-        toast.success('장비 기록이 업데이트되었습니다');
+      // 수정 모드인지 확인 (editingEquipmentRecord에 id가 있으면 수정 모드)
+      if (editingEquipmentRecord.id) {
+        // 수정 모드: 기존 기록을 직접 업데이트
+        const currentQuantity = editingEquipmentRecord.quantity;
+        const newQuantity = currentQuantity + quantityChange;
+        
+        if (newQuantity < 0) {
+          toast.error('수량이 0보다 작을 수 없습니다');
+          return;
+        }
+        
+        if (newQuantity === 0) {
+          // 수량이 0이 되면 삭제
+          await deleteEquipmentRecord(editingEquipmentRecord.id);
+          toast.success('장비 기록이 삭제되었습니다');
+        } else {
+          // 수량 업데이트
+          console.log('Updating equipment record:', editingEquipmentRecord.id, 'new quantity:', newQuantity);
+          await updateEquipmentRecord(editingEquipmentRecord.id, {
+            quantity: newQuantity
+          });
+          toast.success(quantityChange > 0 ? '장비 수량이 증가했습니다' : '장비 수량이 감소했습니다');
+        }
       } else {
-        // 기존 기록이 없으면 추가 (백엔드에서도 합산 로직이 있지만, 프론트엔드에서도 확인)
-        console.log('Adding new equipment record with teamId:', teamId, 'updates:', updates);
-        await addEquipmentRecord({
-          workDate: dateStr,
-          equipmentType,
-          quantity,
-          teamId,
-          createdBy,
-        });
-        toast.success('장비 기록이 추가되었습니다');
+        // 추가 모드: 기존 기록이 있는지 확인 (같은 날짜, 같은 장비 타입, 같은 팀)
+        const existingRecord = equipmentRecords.find(
+          r => r.equipmentType === equipmentType && 
+               r.workDate === dateStr &&
+               r.teamId === teamId
+        );
+
+        if (existingRecord && existingRecord.id) {
+          // 기존 기록이 있으면 수량을 변경 (증가 또는 감소)
+          const newQuantity = existingRecord.quantity + quantityChange;
+          
+          if (newQuantity < 0) {
+            toast.error('수량이 0보다 작을 수 없습니다');
+            return;
+          }
+          
+          if (newQuantity === 0) {
+            // 수량이 0이 되면 삭제
+            await deleteEquipmentRecord(existingRecord.id);
+            toast.success('장비 기록이 삭제되었습니다');
+          } else {
+            // 수량 업데이트
+            console.log('Updating existing equipment record:', existingRecord.id, 'new quantity:', newQuantity);
+            await updateEquipmentRecord(existingRecord.id, {
+              quantity: newQuantity
+            });
+            toast.success(quantityChange > 0 ? '장비 수량이 증가했습니다' : '장비 수량이 감소했습니다');
+          }
+        } else {
+          // 기존 기록이 없으면
+          if (quantityChange < 0) {
+            toast.error('기존 기록이 없어 수량을 줄일 수 없습니다');
+            return;
+          }
+          // 새로 추가 (백엔드에서도 합산 로직이 있지만, 프론트엔드에서도 확인)
+          console.log('Adding new equipment record with teamId:', teamId, 'updates:', updates);
+          await addEquipmentRecord({
+            workDate: dateStr,
+            equipmentType,
+            quantity: quantityChange,
+            teamId,
+            createdBy,
+          });
+          toast.success('장비 기록이 추가되었습니다');
+        }
       }
       
       handleEquipmentFormClose();
@@ -452,30 +495,62 @@ export default function WorkRecordPage() {
                   기록된 장비가 없습니다
                 </p>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                  {equipmentByType.map((equip) => (
-                    <div
-                      key={equip.equipmentType}
-                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 p-2 sm:p-3 border rounded-lg hover:bg-gray-50"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs sm:text-sm text-muted-foreground mb-1">장비</p>
-                        <p className="font-medium text-sm sm:text-base">{equip.equipmentType}</p>
-                        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                          수량: <span className="font-medium">{equip.totalQuantity}대</span>
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEquipmentAdd(equip.equipmentType)}
-                        className="h-7 w-7 sm:h-8 sm:w-8 shrink-0"
-                        title="추가"
+                <div className="space-y-2 sm:space-y-3">
+                  {equipmentByType.map((equip) => {
+                    // 첫 번째 레코드를 사용 (같은 타입의 레코드가 여러 개일 수 있음)
+                    const firstRecord = equip.records[0];
+                    return (
+                      <div
+                        key={equip.equipmentType}
+                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 p-2 sm:p-3 border rounded-lg hover:bg-gray-50"
                       >
-                        <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                      </Button>
-                    </div>
-                  ))}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs sm:text-sm text-muted-foreground mb-1">장비</p>
+                          <p className="font-medium text-sm sm:text-base">{equip.equipmentType}</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                            수량: <span className="font-medium">{equip.totalQuantity}대</span>
+                          </p>
+                        </div>
+                        <div className="flex gap-1 sm:gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEquipmentAdd(equip.equipmentType)}
+                            className="h-7 w-7 sm:h-8 sm:w-8 shrink-0"
+                            title="수량 추가"
+                          >
+                            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              if (firstRecord) {
+                                handleEditEquipment(firstRecord);
+                              }
+                            }}
+                            className="h-7 w-7 sm:h-8 sm:w-8 shrink-0"
+                            title="수정"
+                          >
+                            <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              if (firstRecord && firstRecord.id) {
+                                handleDelete(firstRecord.id, 'equipment');
+                              }
+                            }}
+                            className="h-7 w-7 sm:h-8 sm:w-8 shrink-0 text-red-500 hover:text-red-700"
+                            title="삭제"
+                          >
+                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
               <div className="mt-4 pt-4 border-t">
@@ -521,13 +596,16 @@ export default function WorkRecordPage() {
       <Dialog open={showEquipmentForm} onOpenChange={handleEquipmentFormClose}>
         <DialogContent className="!max-w-[calc(100vw-1rem)] sm:!max-w-lg !m-2 sm:!m-4 !w-[calc(100vw-1rem)] sm:!w-auto !left-[50%] !top-[50%] !translate-x-[-50%] !translate-y-[-50%]">
           <DialogHeader>
-            <DialogTitle className="text-base sm:text-lg">장비 기록 추가</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">
+              {editingEquipmentRecord && editingEquipmentRecord.id ? '장비 기록 수정' : '장비 기록 추가'}
+            </DialogTitle>
           </DialogHeader>
           {editingEquipmentRecord && (
             <EquipmentEditForm
               record={editingEquipmentRecord}
               onSave={handleSaveEquipment}
               onCancel={handleEquipmentFormClose}
+              isEdit={!!editingEquipmentRecord.id}
             />
           )}
         </DialogContent>
@@ -536,24 +614,30 @@ export default function WorkRecordPage() {
   );
 }
 
-// 장비 기록 추가 폼 컴포넌트
+// 장비 기록 추가/수정 폼 컴포넌트
 function EquipmentEditForm({
   record,
   onSave,
   onCancel,
+  isEdit = false,
 }: {
   record: EquipmentRecord;
   onSave: (updates: Partial<EquipmentRecord>) => void;
   onCancel: () => void;
+  isEdit?: boolean;
 }) {
   const [equipmentType, setEquipmentType] = useState(record.equipmentType);
   const [quantity, setQuantity] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const quantityValue = parseInt(quantity, 10);
+    if (isNaN(quantityValue) || quantityValue === 0) {
+      return;
+    }
     onSave({
       equipmentType,
-      quantity: parseInt(quantity, 10) || 0,
+      quantity: quantityValue,
     });
   };
 
@@ -561,7 +645,7 @@ function EquipmentEditForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="equipment-type">장비 종류</Label>
-        <Select value={equipmentType} onValueChange={setEquipmentType}>
+        <Select value={equipmentType} onValueChange={setEquipmentType} disabled={isEdit}>
           <SelectTrigger>
             <SelectValue placeholder="장비 선택" />
           </SelectTrigger>
@@ -573,33 +657,42 @@ function EquipmentEditForm({
             ))}
           </SelectContent>
         </Select>
+        {isEdit && <p className="text-xs text-muted-foreground">수정 모드에서는 장비 종류를 변경할 수 없습니다</p>}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="equipment-quantity">추가할 수량</Label>
+        <Label htmlFor="equipment-quantity">
+          {isEdit ? '변경할 수량 (양수: 증가, 음수: 감소)' : '추가할 수량'}
+        </Label>
         <Input
           id="equipment-quantity"
           type="number"
-          min="1"
           step="1"
           value={quantity}
           onChange={(e) => {
             const value = e.target.value;
-            if (value === '' || /^\d+$/.test(value)) {
+            // 음수도 허용 (수정 모드에서)
+            if (value === '' || /^-?\d+$/.test(value)) {
               setQuantity(value);
             }
           }}
-          placeholder="추가할 수량 입력"
+          placeholder={isEdit ? "변경할 수량 입력 (예: -5는 5 감소)" : "추가할 수량 입력"}
           required
         />
-        <p className="text-xs text-muted-foreground">같은 날짜의 같은 장비 타입이면 자동으로 누적됩니다</p>
+        {isEdit ? (
+          <p className="text-xs text-muted-foreground">
+            현재 수량: {record.quantity}대. 양수를 입력하면 증가, 음수를 입력하면 감소합니다.
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground">같은 날짜의 같은 장비 타입이면 자동으로 누적됩니다</p>
+        )}
       </div>
 
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onCancel}>
           취소
         </Button>
-        <Button type="submit">추가</Button>
+        <Button type="submit">{isEdit ? '수정' : '추가'}</Button>
       </DialogFooter>
     </form>
   );
