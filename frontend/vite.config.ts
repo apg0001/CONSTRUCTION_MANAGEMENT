@@ -65,7 +65,38 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        // HTML과 JS는 항상 네트워크에서 먼저 확인 (업데이트 즉시 반영)
+        navigationPreload: true,
+        // Service Worker 업데이트 시 즉시 활성화
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
+          {
+            // HTML 파일은 NetworkFirst로 (업데이트 즉시 반영)
+            urlPattern: /^https?:\/\/.*\/.*\.html$/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'html-cache',
+              networkTimeoutSeconds: 3,
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 // 1 day
+              }
+            }
+          },
+          {
+            // JS/CSS 파일은 NetworkFirst로 (업데이트 즉시 반영)
+            urlPattern: /^https?:\/\/.*\.(?:js|css)$/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'assets-cache',
+              networkTimeoutSeconds: 3,
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 // 1 day
+              }
+            }
+          },
           {
             urlPattern: /^https:\/\/.*\.(?:png|jpg|jpeg|svg|gif|webp)$/,
             handler: 'CacheFirst',
