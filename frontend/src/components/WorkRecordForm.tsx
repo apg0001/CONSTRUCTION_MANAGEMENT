@@ -150,11 +150,20 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
     
     const validRows = rows.filter(row => row.workerName && row.siteName && row.workHours > 0);
     
-    // 작업자 정보가 없고 장비도 없으면 에러
-    const hasEquipment = EQUIPMENT_TYPES.some(equipType => equipment[equipType] > 0);
-    if (validRows.length === 0 && !hasEquipment && !notes.trim()) {
-      alert('작업자 정보, 장비 투입, 또는 비고 중 하나 이상을 입력해주세요.');
-      return;
+    // 수정 모드에서는 작업자 정보만 필요, 추가 모드에서는 작업자/장비/비고 중 하나 이상 필요
+    if (record) {
+      // 수정 모드: 작업자 정보만 필요
+      if (validRows.length === 0) {
+        alert('작업자 정보를 입력해주세요.');
+        return;
+      }
+    } else {
+      // 추가 모드: 작업자 정보, 장비 투입, 또는 비고 중 하나 이상 필요
+      const hasEquipment = EQUIPMENT_TYPES.some(equipType => equipment[equipType] > 0);
+      if (validRows.length === 0 && !hasEquipment && !notes.trim()) {
+        alert('작업자 정보, 장비 투입, 또는 비고 중 하나 이상을 입력해주세요.');
+        return;
+      }
     }
 
     const workRecords = validRows.map(row => ({
@@ -168,20 +177,22 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
       createdBy: ''
     }));
 
-    // 장비 레코드는 전체 팀 기준으로 하나만 생성
+    // 장비 레코드는 수정 모드에서는 제외, 추가 모드에서만 생성
     const equipmentRecords: Omit<EquipmentRecord, 'id' | 'createdAt' | 'updatedAt'>[] = [];
-    EQUIPMENT_TYPES.forEach(equipType => {
-      const quantity = equipment[equipType];
-      if (quantity > 0) {
-        equipmentRecords.push({
-          workDate: date,
-          equipmentType: equipType,
-          quantity: quantity,
-          teamId: teamId, // teamId prop 사용
-          createdBy: ''
-        });
-      }
-    });
+    if (!record) {
+      EQUIPMENT_TYPES.forEach(equipType => {
+        const quantity = equipment[equipType];
+        if (quantity > 0) {
+          equipmentRecords.push({
+            workDate: date,
+            equipmentType: equipType,
+            quantity: quantity,
+            teamId: teamId, // teamId prop 사용
+            createdBy: ''
+          });
+        }
+      });
+    }
 
     onSave(workRecords, equipmentRecords, notes);
   };
@@ -278,48 +289,50 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
             </div>
           </div>
 
-          {/* 장비 투입 섹션 */}
-          <div className="space-y-4">
-            <div>
-              <Label className="text-base font-semibold">장비 투입 (대수) - 전체 팀</Label>
-              <p className="text-sm text-muted-foreground mt-1">
-                이 날짜의 전체 팀 장비 투입 현황입니다.
-              </p>
-            </div>
+          {/* 장비 투입 섹션 (수정 모드에서는 숨김) */}
+          {!record && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-base font-semibold">장비 투입 (대수) - 전체 팀</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  이 날짜의 전체 팀 장비 투입 현황입니다.
+                </p>
+              </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 sm:gap-4">
-              {EQUIPMENT_TYPES.map((equipType) => {
-                const currentValue = equipment[equipType];
-                const inputId = `equipment-${equipType.replace(/\./g, '-')}`;
-                return (
-                  <div key={equipType} className="space-y-1 sm:space-y-2">
-                    <Label htmlFor={inputId} className="text-xs sm:text-sm">{equipType}</Label>
-                    <Input
-                      id={inputId}
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={currentValue === 0 ? '' : currentValue.toString()}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '' || /^\d+$/.test(value)) {
-                          const numValue = value === '' ? 0 : parseInt(value, 10);
-                          updateEquipment(equipType, isNaN(numValue) ? 0 : numValue);
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (e.target.value === '') {
-                          updateEquipment(equipType, 0);
-                        }
-                      }}
-                      placeholder="0"
-                      className="text-sm"
-                    />
-                  </div>
-                );
-              })}
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 sm:gap-4">
+                {EQUIPMENT_TYPES.map((equipType) => {
+                  const currentValue = equipment[equipType];
+                  const inputId = `equipment-${equipType.replace(/\./g, '-')}`;
+                  return (
+                    <div key={equipType} className="space-y-1 sm:space-y-2">
+                      <Label htmlFor={inputId} className="text-xs sm:text-sm">{equipType}</Label>
+                      <Input
+                        id={inputId}
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={currentValue === 0 ? '' : currentValue.toString()}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || /^\d+$/.test(value)) {
+                            const numValue = value === '' ? 0 : parseInt(value, 10);
+                            updateEquipment(equipType, isNaN(numValue) ? 0 : numValue);
+                          }
+                        }}
+                        onBlur={(e) => {
+                          if (e.target.value === '') {
+                            updateEquipment(equipType, 0);
+                          }
+                        }}
+                        placeholder="0"
+                        className="text-sm"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 비고 섹션 */}
           <div className="space-y-2">

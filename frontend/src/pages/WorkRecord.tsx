@@ -515,15 +515,6 @@ export default function WorkRecordPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleEquipmentAdd(equip.equipmentType)}
-                            className="h-7 w-7 sm:h-8 sm:w-8 shrink-0"
-                            title="수량 추가"
-                          >
-                            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
                             onClick={() => {
                               if (firstRecord) {
                                 handleEditEquipment(firstRecord);
