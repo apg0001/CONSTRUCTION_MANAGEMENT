@@ -3,6 +3,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import WorkRecord from './pages/WorkRecord';
@@ -81,6 +82,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AppRoutes />
+          <PWAInstallPrompt />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

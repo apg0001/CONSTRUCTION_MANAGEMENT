@@ -12,8 +12,10 @@ export default defineConfig(({ mode }) => ({
     }),
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png'],
+      registerType: 'prompt',
+      injectRegister: 'auto',
+      includeAssets: ['favicon.svg', 'icon.svg'],
+      strategies: 'generateSW',
       manifest: {
         name: '건설 현장 관리 시스템',
         short_name: '건설관리',
@@ -26,16 +28,16 @@ export default defineConfig(({ mode }) => ({
         start_url: '/',
         icons: [
           {
-            src: '/icon-192.png',
-            sizes: '192x192',
-            type: 'image/png',
+            src: '/icon.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
             purpose: 'any maskable'
           },
           {
-            src: '/icon-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable'
+            src: '/favicon.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
+            purpose: 'any'
           }
         ],
         shortcuts: [
@@ -44,14 +46,14 @@ export default defineConfig(({ mode }) => ({
             short_name: '공수',
             description: '공수 기록 추가',
             url: '/work-record',
-            icons: [{ src: '/icon-192.png', sizes: '192x192' }]
+            icons: [{ src: '/icon.svg', sizes: 'any' }]
           },
           {
-            name: '작업자 관리',
-            short_name: '작업자',
-            description: '작업자 관리',
-            url: '/workers',
-            icons: [{ src: '/icon-192.png', sizes: '192x192' }]
+            name: '월별 현황',
+            short_name: '월별',
+            description: '월별 작업 현황 확인',
+            url: '/monthly-report',
+            icons: [{ src: '/icon.svg', sizes: 'any' }]
           }
         ]
       },
@@ -88,7 +90,8 @@ export default defineConfig(({ mode }) => ({
       },
       devOptions: {
         enabled: true,
-        type: 'module'
+        type: 'module',
+        navigateFallback: 'index.html'
       }
     }),
   ],
