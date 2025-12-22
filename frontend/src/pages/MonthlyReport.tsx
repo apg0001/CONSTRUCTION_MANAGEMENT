@@ -139,20 +139,25 @@ export default function MonthlyReport() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
-      <div className="container mx-auto max-w-6xl">
-        <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={() => navigate('/')}>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 overflow-x-hidden w-full max-w-full">
+      <div className="container mx-auto max-w-6xl px-2 sm:px-4 md:px-6 py-3 sm:py-6 w-full">
+        <div className="flex flex-col gap-3 mb-4 sm:mb-6 w-full">
+          <Button variant="ghost" onClick={() => navigate('/')} className="w-full sm:w-auto self-start">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            대시보드로 돌아가기
+            <span className="hidden sm:inline">대시보드로 돌아가기</span>
+            <span className="sm:hidden">돌아가기</span>
           </Button>
-          <div className="flex gap-4 items-center">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-stretch sm:items-center w-full">
             {isAdmin && (
               <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="팀 선택" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent 
+                  position="popper" 
+                  className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-1rem)] sm:max-w-none z-[100]"
+                  sideOffset={4}
+                >
                   {teams.map((team) => (
                     <SelectItem key={team.id} value={team.id}>
                       {team.name}
@@ -165,45 +170,45 @@ export default function MonthlyReport() {
               type="month"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="w-[180px]"
+              className="w-full sm:w-[180px]"
             />
           </div>
         </div>
 
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>작업자별 월별 현황</CardTitle>
+        <div className="space-y-4 sm:space-y-6 w-full">
+          <Card className="w-full">
+            <CardHeader className="pb-2 sm:pb-3">
+              <CardTitle className="text-base sm:text-lg">작업자별 월별 현황</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-2 sm:p-6">
               {workerSummaries.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
+                <p className="text-center text-muted-foreground py-6 sm:py-8 text-sm">
                   해당 월의 작업 기록이 없습니다
                 </p>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   {workerSummaries.map((worker, idx) => (
-                    <div key={idx} className="border-b pb-4 last:border-b-0">
-                      <div className="font-semibold text-lg mb-3">
+                    <div key={idx} className="border-b pb-3 sm:pb-4 last:border-b-0">
+                      <div className="font-semibold text-base sm:text-lg mb-2 sm:mb-3 break-words">
                         {worker.workerName} ({worker.teamName})
                       </div>
                       <div className="space-y-2">
                         {worker.sites.map((site, siteIdx) => (
                           <div
                             key={siteIdx}
-                            className="grid grid-cols-4 gap-4 p-3 bg-gray-50 rounded-lg"
+                            className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4 p-2 sm:p-3 bg-gray-50 rounded-lg"
                           >
                             <div>
-                              <p className="text-sm text-muted-foreground">현장</p>
-                              <p className="font-medium">{site.siteName}</p>
+                              <p className="text-xs sm:text-sm text-muted-foreground">현장</p>
+                              <p className="font-medium text-sm sm:text-base break-words">{site.siteName}</p>
                             </div>
                             <div>
-                              <p className="text-sm text-muted-foreground">작업일수</p>
-                              <p className="font-medium">{site.workDays}일</p>
+                              <p className="text-xs sm:text-sm text-muted-foreground">작업일수</p>
+                              <p className="font-medium text-sm sm:text-base">{site.workDays}일</p>
                             </div>
                             <div>
-                              <p className="text-sm text-muted-foreground">총 공수</p>
-                              <p className="font-medium">{site.totalHours.toFixed(1)}일</p>
+                              <p className="text-xs sm:text-sm text-muted-foreground">총 공수</p>
+                              <p className="font-medium text-sm sm:text-base">{site.totalHours.toFixed(1)}일</p>
                             </div>
                           </div>
                         ))}
@@ -215,35 +220,35 @@ export default function MonthlyReport() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>장비별 월별 현황</CardTitle>
+          <Card className="w-full">
+            <CardHeader className="pb-2 sm:pb-3">
+              <CardTitle className="text-base sm:text-lg">장비별 월별 현황</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-2 sm:p-6">
               {equipmentSummaries.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
+                <p className="text-center text-muted-foreground py-6 sm:py-8 text-sm">
                   해당 월의 장비 기록이 없습니다
                 </p>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   {equipmentSummaries.map((equipment, idx) => (
-                    <div key={idx} className="border-b pb-4 last:border-b-0">
-                      <div className="font-semibold text-lg mb-3">
+                    <div key={idx} className="border-b pb-3 sm:pb-4 last:border-b-0">
+                      <div className="font-semibold text-base sm:text-lg mb-2 sm:mb-3">
                         {equipment.equipmentType}
                       </div>
                       <div className="space-y-2">
                         {equipment.sites.map((site, siteIdx) => (
                           <div
                             key={siteIdx}
-                            className="grid grid-cols-3 gap-4 p-3 bg-gray-50 rounded-lg"
+                            className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 p-2 sm:p-3 bg-gray-50 rounded-lg"
                           >
                             <div>
-                              <p className="text-sm text-muted-foreground">현장</p>
-                              <p className="font-medium">{site.siteName}</p>
+                              <p className="text-xs sm:text-sm text-muted-foreground">현장</p>
+                              <p className="font-medium text-sm sm:text-base break-words">{site.siteName || '-'}</p>
                             </div>
                             <div>
-                              <p className="text-sm text-muted-foreground">총 수량</p>
-                              <p className="font-medium">{site.totalQuantity}대</p>
+                              <p className="text-xs sm:text-sm text-muted-foreground">총 수량</p>
+                              <p className="font-medium text-sm sm:text-base">{site.totalQuantity}대</p>
                             </div>
                           </div>
                         ))}
