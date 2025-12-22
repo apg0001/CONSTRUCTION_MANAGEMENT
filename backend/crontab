@@ -1,0 +1,6 @@
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# 데이터베이스 자동 백업
+# 매일 UTC 17시 (한국시간 02시)에 실행
+0 17 * * * root cd /app && /usr/local/bin/python3 backup_db.py >> /app/logs/backup.log 2>&1

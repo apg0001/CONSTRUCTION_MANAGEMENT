@@ -13,6 +13,8 @@ services:
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
     volumes:
       - backend_data:/app/data
+      - backend_backups:/app/backups
+      - backend_logs:/app/logs
     working_dir: /app
     ports:
       - "8000:8000"
@@ -51,6 +53,8 @@ services:
 
 volumes:
   backend_data:
+  backend_backups:
+  backend_logs:
 
 networks:
   construction-network:
