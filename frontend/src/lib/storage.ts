@@ -125,7 +125,14 @@ export const getUsers = async (): Promise<User[]> => {
 
 export const getCurrentUser = (): User | null => {
   const userStr = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-  return userStr ? JSON.parse(userStr) : null;
+  if (!userStr) return null;
+  const user = JSON.parse(userStr);
+  // Ensure camelCase conversion for stored user (backward compatibility)
+  return {
+    ...user,
+    teamId: user.teamId || user.team_id,
+    teamName: user.teamName || user.team_name
+  };
 };
 
 export const setCurrentUser = (user: User | null) => {
@@ -157,6 +164,16 @@ export const setCurrentUser = (user: User | null) => {
 //   }
 // };
 
+// Helper function to convert User from snake_case to camelCase
+const convertUser = (user: any): User => ({
+  id: user.id,
+  email: user.email,
+  password: '', // Don't store password
+  role: user.role,
+  teamId: user.team_id,
+  teamName: user.team_name
+});
+
 export const login = async (email: string, password: string): Promise<User | null> => {
   try {
     const response = await apiCall(
@@ -168,8 +185,10 @@ export const login = async (email: string, password: string): Promise<User | nul
 
     if (response.access_token && response.user) {
       localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, response.access_token);
-      setCurrentUser(response.user);
-      return response.user;
+      // Convert snake_case to camelCase
+      const user = convertUser(response.user);
+      setCurrentUser(user);
+      return user;
     }
     return null;
   } catch (error) {

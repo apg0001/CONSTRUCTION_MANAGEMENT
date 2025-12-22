@@ -29,7 +29,7 @@ export default function WorkRecordPage() {
   const [equipmentRecords, setEquipmentRecords] = useState<EquipmentRecord[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingRecord, setEditingRecord] = useState<WorkRecord | undefined>(undefined);
-  const [selectedTeamId, setSelectedTeamId] = useState<string>(user?.teamId || '');
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [teams, setTeams] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -47,13 +47,22 @@ export default function WorkRecordPage() {
     loadTeams();
   }, []);
 
+  // Set team ID when user loads or changes
   useEffect(() => {
-    if (!user?.teamId && !isAdmin) {
-      setSelectedTeamId('');
-    } else if (user?.teamId) {
-      setSelectedTeamId(user.teamId);
+    if (user) {
+      if (isAdmin) {
+        // Admin: use selectedTeamId if set, otherwise use first team or empty
+        if (!selectedTeamId && teams.length > 0) {
+          setSelectedTeamId(teams[0].id);
+        }
+      } else {
+        // Manager: always use their team ID
+        if (user.teamId) {
+          setSelectedTeamId(user.teamId);
+        }
+      }
     }
-  }, [user, isAdmin]);
+  }, [user, isAdmin, teams]);
 
   useEffect(() => {
     loadRecords();
@@ -105,9 +114,15 @@ export default function WorkRecordPage() {
   };
 
   const handleSave = async (records: Omit<WorkRecord, 'id' | 'createdAt' | 'updatedAt'>[], equipmentData: Omit<EquipmentRecord, 'id' | 'createdAt' | 'updatedAt'>[], notes: string) => {
-    const teamId = isAdmin ? selectedTeamId : user?.teamId;
+    // Manager는 자동으로 자신의 팀 ID 사용, Admin은 선택한 팀 ID 사용
+    const teamId = isAdmin ? selectedTeamId : (user?.teamId || '');
+    
     if (!teamId) {
-      toast.error('팀을 선택해주세요');
+      if (isAdmin) {
+        toast.error('팀을 선택해주세요');
+      } else {
+        toast.error('팀 정보를 불러올 수 없습니다. 다시 로그인해주세요.');
+      }
       return;
     }
 

@@ -49,7 +49,7 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
 
   // 최근 기록 불러오기 (새로 작성할 때만)
   useEffect(() => {
-    if (isOpen && !record && teamId) {
+    if (isOpen && !record && teamId && teamId.trim() !== '') {
       const loadLastRecord = async () => {
         try {
           const lastWorkRecords = await getLastWorkRecords(teamId);
