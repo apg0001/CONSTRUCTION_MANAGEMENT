@@ -150,8 +150,10 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
     
     const validRows = rows.filter(row => row.workerName && row.siteName && row.workHours > 0);
     
-    if (validRows.length === 0) {
-      alert('최소 한 명의 작업자 정보를 입력해주세요.');
+    // 작업자 정보가 없고 장비도 없으면 에러
+    const hasEquipment = EQUIPMENT_TYPES.some(equipType => equipment[equipType] > 0);
+    if (validRows.length === 0 && !hasEquipment && !notes.trim()) {
+      alert('작업자 정보, 장비 투입, 또는 비고 중 하나 이상을 입력해주세요.');
       return;
     }
 
