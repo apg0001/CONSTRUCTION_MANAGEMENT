@@ -22,17 +22,16 @@ RUN mkdir -p /app/data /app/backups /app/logs
 COPY backup_db.py /app/backup_db.py
 RUN chmod +x /app/backup_db.py
 
-# Copy crontab file
+# Copy crontab file to /etc/cron.d/ (cron daemon will automatically read it)
 COPY crontab /etc/cron.d/db-backup
 
-# Set permissions for crontab
+# Set permissions for crontab (must be 0644 and end with newline)
 RUN chmod 0644 /etc/cron.d/db-backup
 
 # Create log file and set permissions
 RUN touch /app/logs/backup.log && chmod 666 /app/logs/backup.log
 
-# Apply cron job
-RUN crontab /etc/cron.d/db-backup
+# Note: /etc/cron.d/ files are automatically read by cron daemon, no need for crontab command
 
 # Expose port
 EXPOSE 8000
