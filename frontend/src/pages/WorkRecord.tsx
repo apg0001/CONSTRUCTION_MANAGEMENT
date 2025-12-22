@@ -43,14 +43,20 @@ export default function WorkRecordPage() {
     const loadTeams = async () => {
       try {
         const teamsData = await getTeams();
+        console.log('loadTeams - loaded teams:', teamsData);
         setTeams(teamsData);
+        if (teamsData.length === 0) {
+          console.warn('No teams found');
+        }
       } catch (error) {
         console.error('Error loading teams:', error);
         toast.error('팀 정보를 불러올 수 없습니다');
       }
     };
-    loadTeams();
-  }, []);
+    if (isAdmin) {
+      loadTeams();
+    }
+  }, [isAdmin]);
 
   // Set team ID when user loads or changes
   useEffect(() => {
@@ -150,23 +156,48 @@ export default function WorkRecordPage() {
         toast.success('공수 기록이 수정되었습니다');
       } else {
         // 추가 모드: 여러 레코드 추가
-        for (const record of records) {
-          console.log('Adding work record with teamId:', teamId, 'record:', record);
-          await addWorkRecord({ ...record, teamId, createdBy, notes });
+        // 작업자 기록이 있으면 추가
+        if (records.length > 0) {
+          for (const record of records) {
+            console.log('Adding work record with teamId:', teamId, 'record:', record);
+            await addWorkRecord({ ...record, teamId, createdBy, notes });
+          }
         }
         
-        // 장비 레코드 추가
-        for (const equipment of equipmentData) {
-          console.log('Adding equipment record with teamId:', teamId, 'equipment:', equipment);
-          await addEquipmentRecord({ ...equipment, teamId, createdBy });
+        // 장비 레코드 추가 (기존 기록이 있으면 합산, 없으면 추가)
+        if (equipmentData.length > 0) {
+          for (const equipment of equipmentData) {
+            // 기존 기록이 있는지 확인 (같은 날짜, 같은 장비 타입, 같은 팀)
+            const existingRecord = equipmentRecords.find(
+              r => r.equipmentType === equipment.equipmentType && 
+                   r.workDate === equipment.workDate &&
+                   r.teamId === teamId
+            );
+
+            if (existingRecord && existingRecord.id) {
+              // 기존 기록이 있으면 수량을 합산하여 업데이트
+              const newQuantity = existingRecord.quantity + equipment.quantity;
+              console.log('Updating existing equipment record:', existingRecord.id, 'new quantity:', newQuantity);
+              await updateEquipmentRecord(existingRecord.id, {
+                quantity: newQuantity
+              });
+            } else {
+              // 기존 기록이 없으면 추가 (백엔드에서도 합산 로직이 있지만, 프론트엔드에서도 확인)
+              console.log('Adding equipment record with teamId:', teamId, 'equipment:', equipment);
+              await addEquipmentRecord({ ...equipment, teamId, createdBy });
+            }
+          }
         }
         
+        // 성공 메시지
         if (records.length > 0 && equipmentData.length > 0) {
           toast.success(`${records.length}명의 공수 기록과 장비 기록이 추가되었습니다`);
         } else if (records.length > 0) {
           toast.success(`${records.length}명의 공수 기록이 추가되었습니다`);
         } else if (equipmentData.length > 0) {
           toast.success('장비 기록이 추가되었습니다');
+        } else if (notes.trim()) {
+          toast.success('비고가 저장되었습니다');
         }
       }
       
@@ -210,22 +241,41 @@ export default function WorkRecordPage() {
       const createdBy = user?.email || '';
       const dateStr = selectedDate.toISOString().split('T')[0];
       const quantity = updates.quantity || 0;
+      const equipmentType = updates.equipmentType || editingEquipmentRecord.equipmentType;
 
       if (quantity <= 0) {
         toast.error('수량은 0보다 커야 합니다');
         return;
       }
 
-      // 항상 추가 (백엔드에서 같은 날짜/같은 장비 타입이면 자동으로 누적)
-      console.log('Adding equipment record with teamId:', teamId, 'updates:', updates);
-      await addEquipmentRecord({
-        workDate: dateStr,
-        equipmentType: updates.equipmentType || editingEquipmentRecord.equipmentType,
-        quantity,
-        teamId,
-        createdBy,
-      });
-      toast.success('장비 기록이 추가되었습니다');
+      // 기존 기록이 있는지 확인 (같은 날짜, 같은 장비 타입, 같은 팀)
+      const existingRecord = equipmentRecords.find(
+        r => r.equipmentType === equipmentType && 
+             r.workDate === dateStr &&
+             r.teamId === teamId
+      );
+
+      if (existingRecord && existingRecord.id) {
+        // 기존 기록이 있으면 수량을 합산하여 업데이트
+        const newQuantity = existingRecord.quantity + quantity;
+        console.log('Updating existing equipment record:', existingRecord.id, 'new quantity:', newQuantity);
+        await updateEquipmentRecord(existingRecord.id, {
+          quantity: newQuantity
+        });
+        toast.success('장비 기록이 업데이트되었습니다');
+      } else {
+        // 기존 기록이 없으면 추가 (백엔드에서도 합산 로직이 있지만, 프론트엔드에서도 확인)
+        console.log('Adding new equipment record with teamId:', teamId, 'updates:', updates);
+        await addEquipmentRecord({
+          workDate: dateStr,
+          equipmentType,
+          quantity,
+          teamId,
+          createdBy,
+        });
+        toast.success('장비 기록이 추가되었습니다');
+      }
+      
       handleEquipmentFormClose();
     } catch (error) {
       console.error('Error saving equipment record:', error);

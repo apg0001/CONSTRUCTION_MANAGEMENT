@@ -206,8 +206,16 @@ export const logout = () => {
 export const getTeams = async (): Promise<Team[]> => {
   try {
     // Try to get from API
-    return await apiCall('/teams');
+    const teams = await apiCall('/teams');
+    console.log('getTeams - fetched teams:', teams);
+    // Convert snake_case to camelCase if needed
+    return teams.map((team: any) => ({
+      id: team.id,
+      name: team.name,
+      managerId: team.manager_id || team.managerId
+    }));
   } catch (error) {
+    console.error('Error fetching teams:', error);
     // Fallback to local cache if API fails
     const cached = localStorage.getItem(STORAGE_KEYS.TEAMS_CACHE);
     return cached ? JSON.parse(cached) : [];
@@ -256,7 +264,7 @@ const convertWorkRecord = (record: any): WorkRecord => ({
   id: record.id,
   workerId: record.worker_id,
   workerName: record.worker_name,
-  siteName: record.site_name,
+  siteName: record.site_name || '', // 작업자 기록의 현장명 (기본값 설정)
   workDate: record.work_date,
   workHours: record.work_hours,
   notes: record.notes,
@@ -308,6 +316,7 @@ export const addWorkRecord = async (
   const requestBody = {
     worker_id: record.workerId,
     worker_name: record.workerName,
+    site_name: record.siteName,
     work_date: record.workDate,
     work_hours: record.workHours,
     notes: record.notes || null,
@@ -329,7 +338,7 @@ export const updateWorkRecord = async (
   const backendUpdates: any = {};
   if (updates.workerId !== undefined) backendUpdates.worker_id = updates.workerId;
   if (updates.workerName !== undefined) backendUpdates.worker_name = updates.workerName;
-  // site_name은 더 이상 사용하지 않음
+  if (updates.siteName !== undefined) backendUpdates.site_name = updates.siteName;
   if (updates.workHours !== undefined) backendUpdates.work_hours = updates.workHours;
   if (updates.notes !== undefined) backendUpdates.notes = updates.notes || null;
   

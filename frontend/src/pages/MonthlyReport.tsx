@@ -21,10 +21,7 @@ interface WorkerSummary {
 
 interface EquipmentSummary {
   equipmentType: string;
-  sites: {
-    siteName: string;
-    totalQuantity: number;
-  }[];
+  totalQuantity: number;
 }
 
 export default function MonthlyReport() {
@@ -106,27 +103,18 @@ export default function MonthlyReport() {
         }
       });
 
-      // Group equipment by type and site
+      // Group equipment by type (장비 기록에는 현장명이 없으므로 타입별로만 합산)
       const equipmentMap = new Map<string, EquipmentSummary>();
       monthEquipment.forEach(record => {
         if (!equipmentMap.has(record.equipmentType)) {
           equipmentMap.set(record.equipmentType, {
             equipmentType: record.equipmentType,
-            sites: [],
+            totalQuantity: 0,
           });
         }
 
         const equipment = equipmentMap.get(record.equipmentType)!;
-        const existingSite = equipment.sites.find(s => s.siteName === record.siteName);
-
-        if (existingSite) {
-          existingSite.totalQuantity += record.quantity;
-        } else {
-          equipment.sites.push({
-            siteName: record.siteName,
-            totalQuantity: record.quantity,
-          });
-        }
+        equipment.totalQuantity += record.quantity;
       });
 
       setWorkerSummaries(Array.from(workerMap.values()));
@@ -236,22 +224,11 @@ export default function MonthlyReport() {
                       <div className="font-semibold text-base sm:text-lg mb-2 sm:mb-3">
                         {equipment.equipmentType}
                       </div>
-                      <div className="space-y-2">
-                        {equipment.sites.map((site, siteIdx) => (
-                          <div
-                            key={siteIdx}
-                            className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 p-2 sm:p-3 bg-gray-50 rounded-lg"
-                          >
-                            <div>
-                              <p className="text-xs sm:text-sm text-muted-foreground">현장</p>
-                              <p className="font-medium text-sm sm:text-base break-words">{site.siteName || '-'}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs sm:text-sm text-muted-foreground">총 수량</p>
-                              <p className="font-medium text-sm sm:text-base">{site.totalQuantity}대</p>
-                            </div>
-                          </div>
-                        ))}
+                      <div className="p-2 sm:p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="text-xs sm:text-sm text-muted-foreground">총 수량</p>
+                          <p className="font-medium text-sm sm:text-base">{equipment.totalQuantity}대</p>
+                        </div>
                       </div>
                     </div>
                   ))}

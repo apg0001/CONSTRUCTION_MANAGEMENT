@@ -103,11 +103,10 @@ def migrate_remove_site_name_from_equipment():
         db.close()
 
 
-def migrate_remove_site_name_from_work_records():
+def migrate_ensure_site_name_in_work_records():
     """
-    work_records 테이블에서 site_name 컬럼을 제거합니다.
-    SQLite는 ALTER TABLE DROP COLUMN을 직접 지원하지 않으므로,
-    새 테이블을 생성하고 데이터를 복사한 후 기존 테이블을 교체합니다.
+    work_records 테이블에 site_name 컬럼이 있는지 확인하고, 없으면 추가합니다.
+    작업자 기록의 현장명은 필요하므로 유지해야 합니다.
     """
     db = SessionLocal()
     try:
@@ -122,47 +121,13 @@ def migrate_remove_site_name_from_work_records():
         columns = [row[1] for row in result.fetchall()]
         
         if 'site_name' not in columns:
-            print("✓ work_records 테이블에 site_name 컬럼이 없습니다. 마이그레이션 불필요.")
-            return
-        
-        print("work_records 테이블에서 site_name 컬럼을 제거합니다...")
-        
-        # 새 테이블 생성 (site_name 없이)
-        db.execute(text("""
-            CREATE TABLE work_records_new (
-                id VARCHAR(36) PRIMARY KEY,
-                worker_id VARCHAR(36),
-                worker_name VARCHAR(255),
-                work_date DATE,
-                work_hours REAL,
-                notes VARCHAR(1000),
-                team_id VARCHAR(36),
-                created_by VARCHAR(255),
-                created_at DATETIME,
-                updated_at DATETIME
-            )
-        """))
-        
-        # 데이터 복사 (site_name 제외)
-        db.execute(text("""
-            INSERT INTO work_records_new 
-            (id, worker_id, worker_name, work_date, work_hours, notes, team_id, created_by, created_at, updated_at)
-            SELECT id, worker_id, worker_name, work_date, work_hours, notes, team_id, created_by, created_at, updated_at
-            FROM work_records
-        """))
-        
-        # 기존 테이블 삭제
-        db.execute(text("DROP TABLE work_records"))
-        
-        # 새 테이블 이름 변경
-        db.execute(text("ALTER TABLE work_records_new RENAME TO work_records"))
-        
-        # 인덱스 재생성
-        db.execute(text("CREATE INDEX IF NOT EXISTS ix_work_records_work_date ON work_records(work_date)"))
-        db.execute(text("CREATE INDEX IF NOT EXISTS ix_work_records_team_id ON work_records(team_id)"))
-        
-        db.commit()
-        print("✓ site_name 컬럼이 성공적으로 제거되었습니다.")
+            print("work_records 테이블에 site_name 컬럼을 추가합니다...")
+            # SQLite는 ALTER TABLE ADD COLUMN만 지원
+            db.execute(text("ALTER TABLE work_records ADD COLUMN site_name VARCHAR(255) DEFAULT ''"))
+            db.commit()
+            print("✓ site_name 컬럼이 성공적으로 추가되었습니다.")
+        else:
+            print("✓ work_records 테이블에 site_name 컬럼이 이미 존재합니다.")
             
     except Exception as e:
         db.rollback()
@@ -176,5 +141,5 @@ if __name__ == "__main__":
     print("데이터베이스 마이그레이션 시작...")
     migrate_add_notes_column()
     migrate_remove_site_name_from_equipment()
-    migrate_remove_site_name_from_work_records()
+    migrate_ensure_site_name_in_work_records()  # work_records에는 site_name이 필요
     print("마이그레이션 완료!")
