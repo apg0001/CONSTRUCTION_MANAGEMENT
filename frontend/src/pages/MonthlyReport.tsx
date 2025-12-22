@@ -71,7 +71,11 @@ export default function MonthlyReport() {
 
       const allRecords = await getWorkRecords(teamId);
       const allEquipment = await getEquipmentRecords(teamId);
-      const teamName = teams.find(t => t.id === teamId)?.name || '';
+      // 팀명 찾기: teams 배열에서 찾거나, user의 teamName 사용
+      let teamName = teams.find(t => t.id === teamId)?.name || '';
+      if (!teamName && user?.teamName) {
+        teamName = user.teamName;
+      }
 
       // Filter by selected month - add null check for workDate
       const monthRecords = allRecords.filter(r => r.workDate && r.workDate.startsWith(selectedMonth));
@@ -178,7 +182,7 @@ export default function MonthlyReport() {
                   {workerSummaries.map((worker, idx) => (
                     <div key={idx} className="border-b pb-3 sm:pb-4 last:border-b-0">
                       <div className="font-semibold text-base sm:text-lg mb-2 sm:mb-3 break-words">
-                        {worker.workerName} ({worker.teamName})
+                        {worker.workerName}{worker.teamName ? ` (${worker.teamName})` : ''}
                       </div>
                       <div className="space-y-2">
                         {worker.sites.map((site, siteIdx) => (
