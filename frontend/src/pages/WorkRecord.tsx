@@ -154,7 +154,13 @@ export default function WorkRecordPage() {
           await addEquipmentRecord({ ...equipment, teamId, createdBy });
         }
         
-        toast.success(`${records.length}명의 공수 기록이 추가되었습니다`);
+        if (records.length > 0 && equipmentData.length > 0) {
+          toast.success(`${records.length}명의 공수 기록과 장비 기록이 추가되었습니다`);
+        } else if (records.length > 0) {
+          toast.success(`${records.length}명의 공수 기록이 추가되었습니다`);
+        } else if (equipmentData.length > 0) {
+          toast.success('장비 기록이 추가되었습니다');
+        }
       }
       
       handleFormClose();
@@ -193,7 +199,6 @@ export default function WorkRecordPage() {
       // 항상 추가 (백엔드에서 같은 날짜/같은 장비 타입이면 자동으로 누적)
       await addEquipmentRecord({
         workDate: dateStr,
-        siteName: '', // 현장명 제거
         equipmentType: updates.equipmentType || editingEquipmentRecord.equipmentType,
         quantity,
         teamId,
@@ -231,7 +236,6 @@ export default function WorkRecordPage() {
     const newRecord: EquipmentRecord = {
       id: '',
       workDate: dateStr,
-      siteName: '',
       equipmentType,
       quantity: 0,
       teamId: isAdmin ? selectedTeamId : (user?.teamId || ''),
@@ -413,7 +417,6 @@ export default function WorkRecordPage() {
                     const newRecord: EquipmentRecord = {
                       id: '',
                       workDate: dateStr,
-                      siteName: '',
                       equipmentType: EQUIPMENT_TYPES[0],
                       quantity: 0,
                       teamId: isAdmin ? selectedTeamId : (user?.teamId || ''),

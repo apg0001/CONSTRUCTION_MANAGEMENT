@@ -175,7 +175,6 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
       if (quantity > 0) {
         equipmentRecords.push({
           workDate: date,
-          siteName: '', // 장비는 전체 팀 기준이므로 현장명 없음
           equipmentType: equipType,
           quantity: quantity,
           teamId: '',

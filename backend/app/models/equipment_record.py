@@ -10,7 +10,6 @@ class EquipmentRecord(Base):
 
     id = Column(String(36), primary_key=True, index=True)
     work_date = Column(Date, index=True)
-    site_name = Column(String(255))
     equipment_type = Column(String(50))
     quantity = Column(Integer)
     team_id = Column(String(36), index=True)

@@ -71,7 +71,6 @@ def create_equipment_record(
         db_equipment_record = EquipmentRecord(
             id=str(uuid.uuid4()),
             work_date=equipment_record.work_date,
-            site_name=equipment_record.site_name,
             equipment_type=equipment_record.equipment_type,
             quantity=equipment_record.quantity,
             team_id=equipment_record.team_id,
@@ -130,8 +129,6 @@ def update_equipment_record(
     # Update fields
     if equipment_record.work_date is not None:
         db_record.work_date = equipment_record.work_date
-    if equipment_record.site_name is not None:
-        db_record.site_name = equipment_record.site_name
     if equipment_record.equipment_type is not None:
         db_record.equipment_type = equipment_record.equipment_type
     if equipment_record.quantity is not None:

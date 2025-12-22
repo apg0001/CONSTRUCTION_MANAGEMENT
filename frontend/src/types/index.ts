@@ -36,7 +36,6 @@ export interface WorkRecord {
 export interface EquipmentRecord {
   id: string;
   workDate: string;
-  siteName: string;
   equipmentType: string;
   quantity: number;
   teamId: string;

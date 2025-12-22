@@ -270,7 +270,6 @@ const convertWorkRecord = (record: any): WorkRecord => ({
 const convertEquipmentRecord = (record: any): EquipmentRecord => ({
   id: record.id,
   workDate: record.work_date,
-  siteName: record.site_name,
   equipmentType: record.equipment_type,
   quantity: record.quantity,
   teamId: record.team_id,
@@ -421,7 +420,6 @@ export const addEquipmentRecord = async (
   // Backend expects snake_case, convert from camelCase
   const response = await apiCall('/equipment-records', 'POST', {
     work_date: record.workDate,
-    site_name: record.siteName,
     equipment_type: record.equipmentType,
     quantity: record.quantity,
     team_id: record.teamId,
@@ -439,9 +437,6 @@ export const updateEquipmentRecord = async (
   
   if (updates.workDate !== undefined) {
     backendUpdates.work_date = updates.workDate;
-  }
-  if (updates.siteName !== undefined) {
-    backendUpdates.site_name = updates.siteName;
   }
   if (updates.equipmentType !== undefined) {
     backendUpdates.equipment_type = updates.equipmentType;

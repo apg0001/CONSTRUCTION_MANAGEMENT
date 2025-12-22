@@ -4,7 +4,6 @@ from datetime import datetime, date
 
 class EquipmentRecordCreate(BaseModel):
     work_date: date
-    site_name: str
     equipment_type: str
     quantity: int
     team_id: str
@@ -13,7 +12,6 @@ class EquipmentRecordCreate(BaseModel):
 
 class EquipmentRecordUpdate(BaseModel):
     work_date: date | None = None
-    site_name: str | None = None
     equipment_type: str | None = None
     quantity: int | None = None
 
@@ -21,7 +19,6 @@ class EquipmentRecordUpdate(BaseModel):
 class EquipmentRecordResponse(BaseModel):
     id: str
     work_date: date
-    site_name: str
     equipment_type: str
     quantity: int
     team_id: str
