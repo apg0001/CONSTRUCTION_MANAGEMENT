@@ -187,11 +187,11 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="!max-w-[calc(100vw-1rem)] sm:!max-w-[95vw] md:!max-w-4xl !max-h-[calc(100vh-1rem)] sm:!max-h-[90vh] overflow-y-auto p-3 sm:p-4 md:p-6 !m-2 sm:!m-4 !w-[calc(100vw-1rem)] sm:!w-auto !left-[50%] !top-[50%] !translate-x-[-50%] !translate-y-[-50%]">
         <DialogHeader>
-          <DialogTitle>{record ? '공수 기록 수정' : '공수 기록 추가'}</DialogTitle>
+          <DialogTitle className="text-base sm:text-lg">{record ? '공수 기록 수정' : '공수 기록 추가'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           <div className="space-y-2">
             <Label htmlFor="date">작업 날짜</Label>
             <Input
@@ -215,54 +215,58 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
               )}
             </div>
 
-            <div className="border rounded-lg overflow-x-auto">
-              <table className="w-full">
+            <div className="border rounded-lg overflow-x-auto -mx-1 sm:mx-0 w-full">
+              <table className="w-full min-w-[500px] sm:min-w-0 max-w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="p-3 text-left text-sm font-medium min-w-[150px]">작업자명</th>
-                    <th className="p-3 text-left text-sm font-medium min-w-[150px]">현장명</th>
-                    <th className="p-3 text-left text-sm font-medium min-w-[80px]">공수</th>
-                    <th className="p-3 text-left text-sm font-medium min-w-[60px]"></th>
+                    <th className="p-2 sm:p-3 text-left text-xs sm:text-sm font-medium min-w-[100px] sm:min-w-[120px]">작업자명</th>
+                    <th className="p-2 sm:p-3 text-left text-xs sm:text-sm font-medium min-w-[100px] sm:min-w-[120px]">현장명</th>
+                    <th className="p-2 sm:p-3 text-left text-xs sm:text-sm font-medium min-w-[60px] sm:min-w-[70px]">공수</th>
+                    <th className="p-2 sm:p-3 text-left text-xs sm:text-sm font-medium min-w-[40px] sm:min-w-[50px]"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {rows.map((row) => (
                     <tr key={row.id}>
-                      <td className="p-3">
+                      <td className="p-2 sm:p-3">
                         <Input
                           value={row.workerName}
                           onChange={(e) => updateRow(row.id, 'workerName', e.target.value)}
                           placeholder="이름"
+                          className="text-sm"
                           required
                         />
                       </td>
-                      <td className="p-3">
+                      <td className="p-2 sm:p-3">
                         <Input
                           value={row.siteName}
                           onChange={(e) => updateRow(row.id, 'siteName', e.target.value)}
                           placeholder="현장"
+                          className="text-sm"
                           required
                         />
                       </td>
-                      <td className="p-3">
+                      <td className="p-2 sm:p-3">
                         <Input
                           type="number"
                           value={row.workHours}
                           onChange={(e) => updateRow(row.id, 'workHours', parseFloat(e.target.value) || 0)}
                           min="0"
                           step="0.5"
+                          className="text-sm"
                           required
                         />
                       </td>
-                      <td className="p-3">
+                      <td className="p-2 sm:p-3">
                         {!record && rows.length > 1 && (
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
                             onClick={() => removeRow(row.id)}
+                            className="h-7 w-7 sm:h-10 sm:w-10"
                           >
-                            <Trash2 className="h-4 w-4 text-red-500" />
+                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
                           </Button>
                         )}
                       </td>
@@ -282,13 +286,13 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
               </p>
             </div>
 
-            <div className="grid grid-cols-4 md:grid-cols-8 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 sm:gap-4">
               {EQUIPMENT_TYPES.map((equipType) => {
                 const currentValue = equipment[equipType];
                 const inputId = `equipment-${equipType.replace(/\./g, '-')}`;
                 return (
-                  <div key={equipType} className="space-y-2">
-                    <Label htmlFor={inputId} className="text-sm">{equipType}</Label>
+                  <div key={equipType} className="space-y-1 sm:space-y-2">
+                    <Label htmlFor={inputId} className="text-xs sm:text-sm">{equipType}</Label>
                     <Input
                       id={inputId}
                       type="number"
@@ -308,6 +312,7 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
                         }
                       }}
                       placeholder="0"
+                      className="text-sm"
                     />
                   </div>
                 );
@@ -327,11 +332,11 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">
               취소
             </Button>
-            <Button type="submit">
+            <Button type="submit" className="w-full sm:w-auto">
               {record ? '수정' : '공수 기록'}
             </Button>
           </div>

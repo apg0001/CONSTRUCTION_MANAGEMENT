@@ -197,20 +197,25 @@ export default function WorkRecordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
-      <div className="container mx-auto max-w-7xl">
-        <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={() => navigate('/')}>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 overflow-x-hidden w-full max-w-full">
+      <div className="container mx-auto max-w-7xl px-2 sm:px-4 md:px-6 py-3 sm:py-6 w-full">
+        <div className="flex flex-col gap-3 mb-4 sm:mb-6 w-full">
+          <Button variant="ghost" onClick={() => navigate('/')} className="w-full sm:w-auto self-start">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            대시보드로 돌아가기
+            <span className="hidden sm:inline">대시보드로 돌아가기</span>
+            <span className="sm:hidden">돌아가기</span>
           </Button>
-          <div className="flex gap-4 items-center">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-stretch sm:items-center w-full">
             {isAdmin && (
               <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="팀 선택" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent 
+                  position="popper" 
+                  className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-1rem)] sm:max-w-none z-[100]"
+                  sideOffset={4}
+                >
                   {teams.map((team) => (
                     <SelectItem key={team.id} value={team.id}>
                       {team.name}
@@ -219,35 +224,36 @@ export default function WorkRecordPage() {
                 </SelectContent>
               </Select>
             )}
-            <Button onClick={() => setShowForm(true)}>
+            <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
-              공수 기록 추가
+              <span className="hidden sm:inline">공수 기록 추가</span>
+              <span className="sm:hidden">추가</span>
             </Button>
           </div>
         </div>
 
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>날짜 선택</CardTitle>
+        <div className="space-y-4 sm:space-y-6 w-full">
+          <Card className="w-full">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">날짜 선택</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <Label htmlFor="date-select">조회 날짜</Label>
+                <Label htmlFor="date-select" className="text-sm">조회 날짜</Label>
                 <Input
                   id="date-select"
                   type="date"
                   value={selectedDate.toISOString().split('T')[0]}
                   onChange={handleDateChange}
-                  className="max-w-xs"
+                  className="w-full sm:max-w-xs"
                 />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>
+          <Card className="w-full">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg break-words">
                 {selectedDate.toLocaleDateString('ko-KR', {
                   year: 'numeric',
                   month: 'long',
@@ -255,37 +261,38 @@ export default function WorkRecordPage() {
                 })} 작업 기록
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-2 sm:p-6 w-full">
               {workRecords.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
+                <p className="text-center text-muted-foreground py-8 text-sm">
                   기록된 작업이 없습니다
                 </p>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {workRecords.map((record) => (
                     <div
                       key={record.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg hover:bg-gray-50"
                     >
-                      <div className="flex-1 grid grid-cols-3 gap-4">
+                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 w-full sm:w-auto">
                         <div>
-                          <p className="text-sm text-muted-foreground">작업자명</p>
-                          <p className="font-medium">{record.workerName}</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">작업자명</p>
+                          <p className="font-medium text-sm sm:text-base break-words">{record.workerName}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">현장명</p>
-                          <p className="font-medium">{record.siteName}</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">현장명</p>
+                          <p className="font-medium text-sm sm:text-base break-words">{record.siteName}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">공수</p>
-                          <p className="font-medium">{record.workHours}일</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">공수</p>
+                          <p className="font-medium text-sm sm:text-base">{record.workHours}일</p>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 self-end sm:self-auto">
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleEdit(record)}
+                          className="h-8 w-8 sm:h-10 sm:w-10"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -293,6 +300,7 @@ export default function WorkRecordPage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDelete(record.id, 'work')}
+                          className="h-8 w-8 sm:h-10 sm:w-10"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -304,41 +312,42 @@ export default function WorkRecordPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>장비 기록</CardTitle>
+          <Card className="w-full">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">장비 기록</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-2 sm:p-6 w-full">
               {equipmentRecords.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
+                <p className="text-center text-muted-foreground py-8 text-sm">
                   기록된 장비가 없습니다
                 </p>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {equipmentRecords.map((record) => (
                     <div
                       key={record.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg hover:bg-gray-50"
                     >
-                      <div className="flex-1 grid grid-cols-3 gap-4">
+                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 w-full sm:w-auto">
                         <div>
-                          <p className="text-sm text-muted-foreground">현장명</p>
-                          <p className="font-medium">{record.siteName || '-'}</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">현장명</p>
+                          <p className="font-medium text-sm sm:text-base break-words">{record.siteName || '-'}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">장비</p>
-                          <p className="font-medium">{record.equipmentType}</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">장비</p>
+                          <p className="font-medium text-sm sm:text-base">{record.equipmentType}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">수량</p>
-                          <p className="font-medium">{record.quantity}대</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">수량</p>
+                          <p className="font-medium text-sm sm:text-base">{record.quantity}대</p>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 self-end sm:self-auto">
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleEditEquipment(record)}
+                          className="h-8 w-8 sm:h-10 sm:w-10"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -346,6 +355,7 @@ export default function WorkRecordPage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDelete(record.id, 'equipment')}
+                          className="h-8 w-8 sm:h-10 sm:w-10"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -369,9 +379,9 @@ export default function WorkRecordPage() {
 
       {/* 장비 기록 수정 다이얼로그 */}
       <Dialog open={showEquipmentForm} onOpenChange={handleEquipmentFormClose}>
-        <DialogContent>
+        <DialogContent className="!max-w-[calc(100vw-1rem)] sm:!max-w-lg !m-2 sm:!m-4 !w-[calc(100vw-1rem)] sm:!w-auto !left-[50%] !top-[50%] !translate-x-[-50%] !translate-y-[-50%]">
           <DialogHeader>
-            <DialogTitle>장비 기록 수정</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">장비 기록 수정</DialogTitle>
           </DialogHeader>
           {editingEquipmentRecord && (
             <EquipmentEditForm
