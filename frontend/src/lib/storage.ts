@@ -435,8 +435,23 @@ export const updateEquipmentRecord = async (
   id: string,
   updates: Partial<EquipmentRecord>
 ) => {
-  // Note: Backend doesn't have update endpoint for equipment records yet
-  console.warn('Equipment record update not implemented in backend');
+  const backendUpdates: any = {};
+  
+  if (updates.workDate !== undefined) {
+    backendUpdates.work_date = updates.workDate;
+  }
+  if (updates.siteName !== undefined) {
+    backendUpdates.site_name = updates.siteName;
+  }
+  if (updates.equipmentType !== undefined) {
+    backendUpdates.equipment_type = updates.equipmentType;
+  }
+  if (updates.quantity !== undefined) {
+    backendUpdates.quantity = updates.quantity;
+  }
+  
+  const response = await apiCall(`/equipment-records/${id}`, 'PUT', backendUpdates);
+  return convertEquipmentRecord(response);
 };
 
 export const deleteEquipmentRecord = async (id: string) => {

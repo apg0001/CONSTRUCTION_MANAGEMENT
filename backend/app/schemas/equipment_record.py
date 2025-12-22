@@ -11,6 +11,13 @@ class EquipmentRecordCreate(BaseModel):
     created_by: str
 
 
+class EquipmentRecordUpdate(BaseModel):
+    work_date: date | None = None
+    site_name: str | None = None
+    equipment_type: str | None = None
+    quantity: int | None = None
+
+
 class EquipmentRecordResponse(BaseModel):
     id: str
     work_date: date

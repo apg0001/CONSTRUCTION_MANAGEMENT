@@ -5,7 +5,7 @@ from datetime import date
 import uuid
 from app.database import get_db
 from app.models.equipment_record import EquipmentRecord
-from app.schemas.equipment_record import EquipmentRecordCreate, EquipmentRecordResponse
+from app.schemas.equipment_record import EquipmentRecordCreate, EquipmentRecordUpdate, EquipmentRecordResponse
 from app.security import get_current_user
 
 router = APIRouter(prefix="/equipment-records", tags=["equipment-records"])
@@ -89,6 +89,42 @@ def get_equipment_record(
             )
     
     return record
+
+
+@router.put("/{record_id}", response_model=EquipmentRecordResponse)
+def update_equipment_record(
+    record_id: str,
+    equipment_record: EquipmentRecordUpdate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Update equipment record by ID"""
+    db_record = db.query(EquipmentRecord).filter(EquipmentRecord.id == record_id).first()
+    if not db_record:
+        raise HTTPException(status_code=404, detail="Equipment record not found")
+    
+    # Role-based access control
+    if current_user.get("role") == "manager":
+        user_team_id = current_user.get("team_id")
+        if user_team_id and db_record.team_id != user_team_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Access denied"
+            )
+    
+    # Update fields
+    if equipment_record.work_date is not None:
+        db_record.work_date = equipment_record.work_date
+    if equipment_record.site_name is not None:
+        db_record.site_name = equipment_record.site_name
+    if equipment_record.equipment_type is not None:
+        db_record.equipment_type = equipment_record.equipment_type
+    if equipment_record.quantity is not None:
+        db_record.quantity = equipment_record.quantity
+    
+    db.commit()
+    db.refresh(db_record)
+    return db_record
 
 
 @router.delete("/{record_id}")

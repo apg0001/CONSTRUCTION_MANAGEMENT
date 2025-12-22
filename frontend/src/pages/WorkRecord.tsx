@@ -14,12 +14,15 @@ import {
   addWorkRecord,
   updateWorkRecord,
   addEquipmentRecord,
+  updateEquipmentRecord,
 } from '@/lib/storage';
 import { WorkRecord, EquipmentRecord } from '@/types';
 import { WorkRecordForm } from '@/components/WorkRecordForm';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { EQUIPMENT_TYPES } from '@/types';
 
 export default function WorkRecordPage() {
   const { user, isAdmin } = useAuth();
@@ -29,6 +32,8 @@ export default function WorkRecordPage() {
   const [equipmentRecords, setEquipmentRecords] = useState<EquipmentRecord[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingRecord, setEditingRecord] = useState<WorkRecord | undefined>(undefined);
+  const [editingEquipmentRecord, setEditingEquipmentRecord] = useState<EquipmentRecord | undefined>(undefined);
+  const [showEquipmentForm, setShowEquipmentForm] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [teams, setTeams] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -113,6 +118,11 @@ export default function WorkRecordPage() {
     setShowForm(true);
   };
 
+  const handleEditEquipment = (record: EquipmentRecord) => {
+    setEditingEquipmentRecord(record);
+    setShowEquipmentForm(true);
+  };
+
   const handleSave = async (records: Omit<WorkRecord, 'id' | 'createdAt' | 'updatedAt'>[], equipmentData: Omit<EquipmentRecord, 'id' | 'createdAt' | 'updatedAt'>[], notes: string) => {
     // Manager는 자동으로 자신의 팀 ID 사용, Admin은 선택한 팀 ID 사용
     const teamId = isAdmin ? selectedTeamId : (user?.teamId || '');
@@ -160,15 +170,26 @@ export default function WorkRecordPage() {
     loadRecords();
   };
 
+  const handleEquipmentFormClose = () => {
+    setShowEquipmentForm(false);
+    setEditingEquipmentRecord(undefined);
+    loadRecords();
+  };
 
-  const groupedEquipment = equipmentRecords.reduce((acc, record) => {
-    const key = `${record.siteName}-${record.equipmentType}`;
-    if (!acc[key]) {
-      acc[key] = { ...record, quantity: 0 };
+  const handleSaveEquipment = async (updates: Partial<EquipmentRecord>) => {
+    if (!editingEquipmentRecord) return;
+
+    try {
+      await updateEquipmentRecord(editingEquipmentRecord.id, updates);
+      toast.success('장비 기록이 수정되었습니다');
+      handleEquipmentFormClose();
+    } catch (error) {
+      console.error('Error updating equipment record:', error);
+      toast.error('수정 중 오류가 발생했습니다');
     }
-    acc[key].quantity += record.quantity;
-    return acc;
-  }, {} as Record<string, EquipmentRecord>);
+  };
+
+
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newDate = new Date(e.target.value);
@@ -288,21 +309,21 @@ export default function WorkRecordPage() {
               <CardTitle>장비 기록</CardTitle>
             </CardHeader>
             <CardContent>
-              {Object.keys(groupedEquipment).length === 0 ? (
+              {equipmentRecords.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
                   기록된 장비가 없습니다
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {Object.values(groupedEquipment).map((record) => (
+                  {equipmentRecords.map((record) => (
                     <div
                       key={record.id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
                     >
                       <div className="flex-1 grid grid-cols-3 gap-4">
                         <div>
                           <p className="text-sm text-muted-foreground">현장명</p>
-                          <p className="font-medium">{record.siteName}</p>
+                          <p className="font-medium">{record.siteName || '-'}</p>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">장비</p>
@@ -312,6 +333,22 @@ export default function WorkRecordPage() {
                           <p className="text-sm text-muted-foreground">수량</p>
                           <p className="font-medium">{record.quantity}대</p>
                         </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditEquipment(record)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(record.id, 'equipment')}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -329,6 +366,114 @@ export default function WorkRecordPage() {
         teamId={isAdmin ? selectedTeamId : user?.teamId || ''}
         record={editingRecord}
       />
+
+      {/* 장비 기록 수정 다이얼로그 */}
+      <Dialog open={showEquipmentForm} onOpenChange={handleEquipmentFormClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>장비 기록 수정</DialogTitle>
+          </DialogHeader>
+          {editingEquipmentRecord && (
+            <EquipmentEditForm
+              record={editingEquipmentRecord}
+              onSave={handleSaveEquipment}
+              onCancel={handleEquipmentFormClose}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+// 장비 기록 수정 폼 컴포넌트
+function EquipmentEditForm({
+  record,
+  onSave,
+  onCancel,
+}: {
+  record: EquipmentRecord;
+  onSave: (updates: Partial<EquipmentRecord>) => void;
+  onCancel: () => void;
+}) {
+  const [workDate, setWorkDate] = useState(record.workDate);
+  const [siteName, setSiteName] = useState(record.siteName || '');
+  const [equipmentType, setEquipmentType] = useState(record.equipmentType);
+  const [quantity, setQuantity] = useState(record.quantity.toString());
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave({
+      workDate,
+      siteName,
+      equipmentType,
+      quantity: parseInt(quantity, 10) || 0,
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="equipment-date">작업 날짜</Label>
+        <Input
+          id="equipment-date"
+          type="date"
+          value={workDate}
+          onChange={(e) => setWorkDate(e.target.value)}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="equipment-site">현장명</Label>
+        <Input
+          id="equipment-site"
+          value={siteName}
+          onChange={(e) => setSiteName(e.target.value)}
+          placeholder="현장명"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="equipment-type">장비 종류</Label>
+        <Select value={equipmentType} onValueChange={setEquipmentType}>
+          <SelectTrigger>
+            <SelectValue placeholder="장비 선택" />
+          </SelectTrigger>
+          <SelectContent>
+            {EQUIPMENT_TYPES.map((type) => (
+              <SelectItem key={type} value={type}>
+                {type}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="equipment-quantity">수량</Label>
+        <Input
+          id="equipment-quantity"
+          type="number"
+          min="0"
+          step="1"
+          value={quantity}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value === '' || /^\d+$/.test(value)) {
+              setQuantity(value);
+            }
+          }}
+          required
+        />
+      </div>
+
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={onCancel}>
+          취소
+        </Button>
+        <Button type="submit">수정</Button>
+      </DialogFooter>
+    </form>
   );
 }
