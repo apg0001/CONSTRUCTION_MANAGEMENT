@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: 'prompt',
       injectRegister: 'auto',
-      includeAssets: ['favicon.svg', 'icon.svg'],
+      includeAssets: ['favicon.svg', 'icon.svg', 'icon-192.png', 'icon-512.png', 'icon-96.png'],
       strategies: 'generateSW',
       manifest: {
         name: '건설 현장 관리 시스템',
@@ -28,13 +28,19 @@ export default defineConfig(({ mode }) => ({
         start_url: '/',
         icons: [
           {
-            src: '/icon.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
+            src: '/icon-192.png',
+            sizes: '192x192',
+            type: 'image/png',
             purpose: 'any maskable'
           },
           {
-            src: '/favicon.svg',
+            src: '/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          },
+          {
+            src: '/icon.svg',
             sizes: 'any',
             type: 'image/svg+xml',
             purpose: 'any'
@@ -46,14 +52,14 @@ export default defineConfig(({ mode }) => ({
             short_name: '공수',
             description: '공수 기록 추가',
             url: '/work-record',
-            icons: [{ src: '/icon.svg', sizes: 'any' }]
+            icons: [{ src: '/icon-96.png', sizes: '96x96', type: 'image/png' }]
           },
           {
             name: '월별 현황',
             short_name: '월별',
             description: '월별 작업 현황 확인',
             url: '/monthly-report',
-            icons: [{ src: '/icon.svg', sizes: 'any' }]
+            icons: [{ src: '/icon-96.png', sizes: '96x96', type: 'image/png' }]
           }
         ]
       },

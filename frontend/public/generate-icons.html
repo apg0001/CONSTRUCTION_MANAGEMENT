@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PWA Icon Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        canvas { border: 1px solid #000; margin: 20px 0; }
+        button { margin: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>PWA 아이콘 생성기</h1>
+    <p>이 페이지를 열면 자동으로 아이콘이 다운로드됩니다.</p>
+    <canvas id="canvas" width="512" height="512"></canvas>
+    <div>
+        <button onclick="generateAllIcons()">아이콘 다시 생성</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 배경 그리기 (파란색, 둥근 모서리)
+        ctx.fillStyle = '#3b82f6';
+        ctx.beginPath();
+        ctx.roundRect(0, 0, 512, 512, 64);
+        ctx.fill();
+        
+        // 텍스트 그리기
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 200px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('건', 256, 256);
+        
+        // PNG로 다운로드
+        function downloadIcon(size, filename) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = size;
+            tempCanvas.height = size;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // 배경
+            tempCtx.fillStyle = '#3b82f6';
+            tempCtx.beginPath();
+            tempCtx.roundRect(0, 0, size, size, size * 0.125);
+            tempCtx.fill();
+            
+            // 텍스트
+            tempCtx.fillStyle = '#ffffff';
+            tempCtx.font = `bold ${size * 0.39}px Arial`;
+            tempCtx.textAlign = 'center';
+            tempCtx.textBaseline = 'middle';
+            tempCtx.fillText('건', size / 2, size / 2);
+            
+            tempCanvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        }
+        
+        // 아이콘 생성 함수
+        function generateAllIcons() {
+            console.log('아이콘 생성 시작...');
+            downloadIcon(192, 'icon-192.png');
+            setTimeout(() => {
+                downloadIcon(512, 'icon-512.png');
+                setTimeout(() => {
+                    downloadIcon(96, 'icon-96.png');
+                    console.log('✅ 모든 아이콘 생성 완료!');
+                    alert('모든 아이콘이 다운로드되었습니다!\nfrontend/public/ 폴더에 저장하세요.');
+                }, 500);
+            }, 500);
+        }
+        
+        // Canvas roundRect 폴리필 (구형 브라우저 지원)
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
+                this.beginPath();
+                this.moveTo(x + radius, y);
+                this.lineTo(x + width - radius, y);
+                this.quadraticCurveTo(x + width, y, x + width, y + radius);
+                this.lineTo(x + width, y + height - radius);
+                this.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                this.lineTo(x + radius, y + height);
+                this.quadraticCurveTo(x, y + height, x, y + height - radius);
+                this.lineTo(x, y + radius);
+                this.quadraticCurveTo(x, y, x + radius, y);
+                this.closePath();
+            };
+        }
+        
+        // 페이지 로드 후 자동 생성
+        window.addEventListener('load', () => {
+            setTimeout(generateAllIcons, 1000);
+        });
+    </script>
+</body>
+</html>
