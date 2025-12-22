@@ -305,7 +305,7 @@ export const addWorkRecord = async (
   record: Omit<WorkRecord, 'id' | 'createdAt' | 'updatedAt'>
 ): Promise<WorkRecord> => {
   // Backend expects snake_case, convert from camelCase
-  const response = await apiCall('/work-records', 'POST', {
+  const requestBody = {
     worker_id: record.workerId,
     worker_name: record.workerName,
     site_name: record.siteName,
@@ -314,7 +314,10 @@ export const addWorkRecord = async (
     notes: record.notes || null,
     team_id: record.teamId,
     created_by: record.createdBy
-  });
+  };
+  console.log('addWorkRecord - requestBody:', requestBody, 'record.teamId:', record.teamId);
+  const response = await apiCall('/work-records', 'POST', requestBody);
+  console.log('addWorkRecord - response:', response);
   // Convert response from snake_case to camelCase
   return convertWorkRecord(response);
 };

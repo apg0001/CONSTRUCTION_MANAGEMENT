@@ -34,7 +34,13 @@ def get_work_records(
     if work_date:
         query = query.filter(WorkRecord.work_date == work_date)
     
-    return query.order_by(WorkRecord.work_date.desc()).all()
+    # Log for debugging
+    print(f"get_work_records - current_user role: {current_user.get('role')}, team_id param: {team_id}, work_date: {work_date}")
+    results = query.order_by(WorkRecord.work_date.desc()).all()
+    print(f"get_work_records - found {len(results)} records")
+    if results:
+        print(f"Sample record - id: {results[0].id}, team_id: {results[0].team_id}, worker_name: {results[0].worker_name}")
+    return results
 
 
 @router.post("", response_model=WorkRecordResponse)
@@ -53,6 +59,9 @@ def create_work_record(
                 detail="Managers can only create records for their own team"
             )
     
+    # Log for debugging
+    print(f"Creating work record - team_id: {work_record.team_id}, worker_name: {work_record.worker_name}, current_user role: {current_user.get('role')}, current_user team_id: {current_user.get('team_id')}")
+    
     db_work_record = WorkRecord(
         id=str(uuid.uuid4()),
         worker_id=work_record.worker_id,
@@ -67,6 +76,7 @@ def create_work_record(
     db.add(db_work_record)
     db.commit()
     db.refresh(db_work_record)
+    print(f"Created work record - id: {db_work_record.id}, team_id: {db_work_record.team_id}")
     return db_work_record
 
 

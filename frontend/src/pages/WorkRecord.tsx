@@ -79,9 +79,12 @@ export default function WorkRecordPage() {
       const dateStr = selectedDate.toISOString().split('T')[0];
       const teamId = isAdmin ? selectedTeamId : user?.teamId;
       
+      console.log('loadRecords - isAdmin:', isAdmin, 'selectedTeamId:', selectedTeamId, 'user?.teamId:', user?.teamId, 'teamId:', teamId, 'dateStr:', dateStr);
+      
       if (teamId) {
         const works = await getWorkRecordsByDate(dateStr, teamId);
         const equipment = await getEquipmentRecordsByDate(dateStr, teamId);
+        console.log('Loaded records - works:', works.length, 'equipment:', equipment.length, 'works sample:', works.slice(0, 2));
         setWorkRecords(works);
         setEquipmentRecords(equipment);
       } else {
@@ -127,6 +130,8 @@ export default function WorkRecordPage() {
     // Manager는 자동으로 자신의 팀 ID 사용, Admin은 선택한 팀 ID 사용
     const teamId = isAdmin ? selectedTeamId : (user?.teamId || '');
     
+    console.log('handleSave - isAdmin:', isAdmin, 'selectedTeamId:', selectedTeamId, 'user?.teamId:', user?.teamId, 'teamId:', teamId);
+    
     if (!teamId) {
       if (isAdmin) {
         toast.error('팀을 선택해주세요');
@@ -146,11 +151,13 @@ export default function WorkRecordPage() {
       } else {
         // 추가 모드: 여러 레코드 추가
         for (const record of records) {
+          console.log('Adding work record with teamId:', teamId, 'record:', record);
           await addWorkRecord({ ...record, teamId, createdBy, notes });
         }
         
         // 장비 레코드 추가
         for (const equipment of equipmentData) {
+          console.log('Adding equipment record with teamId:', teamId, 'equipment:', equipment);
           await addEquipmentRecord({ ...equipment, teamId, createdBy });
         }
         
@@ -164,6 +171,8 @@ export default function WorkRecordPage() {
       }
       
       handleFormClose();
+      // 저장 후 레코드 다시 불러오기
+      await loadRecords();
     } catch (error) {
       console.error('Error saving record:', error);
       toast.error('저장 중 오류가 발생했습니다');
