@@ -240,6 +240,7 @@ const convertWorkRecord = (record: any): WorkRecord => ({
   siteName: record.site_name,
   workDate: record.work_date,
   workHours: record.work_hours,
+  notes: record.notes,
   teamId: record.team_id,
   createdBy: record.created_by,
   createdAt: record.created_at,
@@ -292,6 +293,7 @@ export const addWorkRecord = async (
     site_name: record.siteName,
     work_date: record.workDate,
     work_hours: record.workHours,
+    notes: record.notes || null,
     team_id: record.teamId,
     created_by: record.createdBy
   });
@@ -309,6 +311,7 @@ export const updateWorkRecord = async (
   if (updates.workerName !== undefined) backendUpdates.worker_name = updates.workerName;
   if (updates.siteName !== undefined) backendUpdates.site_name = updates.siteName;
   if (updates.workHours !== undefined) backendUpdates.work_hours = updates.workHours;
+  if (updates.notes !== undefined) backendUpdates.notes = updates.notes || null;
   
   const response = await apiCall(`/work-records/${id}`, 'PUT', backendUpdates);
   // Convert response from snake_case to camelCase
@@ -349,6 +352,30 @@ export const getLastWorkRecord = async (teamId: string): Promise<WorkRecord | nu
   } catch (error) {
     console.error('Error fetching last work record:', error);
     return null;
+  }
+};
+
+export const getLastWorkRecords = async (teamId: string): Promise<WorkRecord[]> => {
+  try {
+    const records = await getWorkRecords(teamId);
+    if (records.length === 0) return [];
+    
+    // 날짜별로 정렬하여 최근 날짜 찾기
+    const sorted = records.sort(
+      (a, b) =>
+        new Date(b.workDate).getTime() - new Date(a.workDate).getTime()
+    );
+    
+    if (sorted.length === 0) return [];
+    
+    // 최근 날짜
+    const lastDate = sorted[0].workDate;
+    
+    // 같은 날짜의 모든 레코드 반환
+    return sorted.filter(r => r.workDate === lastDate);
+  } catch (error) {
+    console.error('Error fetching last work records:', error);
+    return [];
   }
 };
 

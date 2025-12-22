@@ -6,7 +6,6 @@ import { AuthProvider, useAuth } from '@/lib/auth';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import WorkRecord from './pages/WorkRecord';
-import WorkerManagement from './pages/WorkerManagement';
 import MonthlyReport from './pages/MonthlyReport';
 import NotFound from './pages/NotFound';
 
@@ -59,14 +58,6 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <WorkRecord />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/workers"
-        element={
-          <ProtectedRoute>
-            <WorkerManagement />
           </ProtectedRoute>
         }
       />

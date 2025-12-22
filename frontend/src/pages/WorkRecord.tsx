@@ -11,7 +11,6 @@ import {
   deleteWorkRecord,
   deleteEquipmentRecord,
   getTeams,
-  getWorkers,
   addWorkRecord,
   updateWorkRecord,
   addEquipmentRecord,
@@ -105,7 +104,7 @@ export default function WorkRecordPage() {
     setShowForm(true);
   };
 
-  const handleSave = async (records: Omit<WorkRecord, 'id' | 'createdAt' | 'updatedAt'>[], equipmentData: Omit<EquipmentRecord, 'id' | 'createdAt' | 'updatedAt'>[]) => {
+  const handleSave = async (records: Omit<WorkRecord, 'id' | 'createdAt' | 'updatedAt'>[], equipmentData: Omit<EquipmentRecord, 'id' | 'createdAt' | 'updatedAt'>[], notes: string) => {
     const teamId = isAdmin ? selectedTeamId : user?.teamId;
     if (!teamId) {
       toast.error('팀을 선택해주세요');
@@ -117,12 +116,12 @@ export default function WorkRecordPage() {
     try {
       if (editingRecord) {
         // 수정 모드: 단일 레코드만 업데이트
-        await updateWorkRecord(editingRecord.id, { ...records[0], teamId, createdBy });
+        await updateWorkRecord(editingRecord.id, { ...records[0], teamId, createdBy, notes });
         toast.success('공수 기록이 수정되었습니다');
       } else {
         // 추가 모드: 여러 레코드 추가
         for (const record of records) {
-          await addWorkRecord({ ...record, teamId, createdBy });
+          await addWorkRecord({ ...record, teamId, createdBy, notes });
         }
         
         // 장비 레코드 추가
@@ -146,24 +145,6 @@ export default function WorkRecordPage() {
     loadRecords();
   };
 
-  const [workers, setWorkers] = useState<any[]>([]);
-
-  // Load workers when selectedTeamId changes
-  useEffect(() => {
-    const loadWorkers = async () => {
-      if (selectedTeamId) {
-        try {
-          const workersData = await getWorkers(selectedTeamId);
-          setWorkers(workersData);
-        } catch (error) {
-          console.error('Error loading workers:', error);
-        }
-      } else {
-        setWorkers([]);
-      }
-    };
-    loadWorkers();
-  }, [selectedTeamId]);
 
   const groupedEquipment = equipmentRecords.reduce((acc, record) => {
     const key = `${record.siteName}-${record.equipmentType}`;
@@ -330,7 +311,7 @@ export default function WorkRecordPage() {
         isOpen={showForm}
         onClose={handleFormClose}
         onSave={handleSave}
-        workers={workers}
+        teamId={isAdmin ? selectedTeamId : user?.teamId || ''}
         record={editingRecord}
       />
     </div>

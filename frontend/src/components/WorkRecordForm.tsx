@@ -3,24 +3,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2 } from 'lucide-react';
-import { Worker, WorkRecord, EQUIPMENT_TYPES, EquipmentRecord, EquipmentType } from '@/types';
+import { WorkRecord, EQUIPMENT_TYPES, EquipmentRecord, EquipmentType } from '@/types';
+import { getLastWorkRecords, getLastEquipmentRecords } from '@/lib/storage';
 
 interface WorkRecordRow {
   id: string;
-  workerId: string;
   workerName: string;
   siteName: string;
   workHours: number;
-  equipment: Record<EquipmentType, number>;
 }
 
 interface WorkRecordFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (records: Omit<WorkRecord, 'id' | 'createdAt' | 'updatedAt'>[], equipmentData: Omit<EquipmentRecord, 'id' | 'createdAt' | 'updatedAt'>[]) => void;
-  workers: Worker[];
+  onSave: (records: Omit<WorkRecord, 'id' | 'createdAt' | 'updatedAt'>[], equipmentData: Omit<EquipmentRecord, 'id' | 'createdAt' | 'updatedAt'>[], notes: string) => void;
+  teamId: string;
   record?: WorkRecord;
 }
 
@@ -35,52 +34,92 @@ const createEmptyEquipment = (): Record<EquipmentType, number> => ({
   '모범수': 0
 });
 
-export function WorkRecordForm({ isOpen, onClose, onSave, workers, record }: WorkRecordFormProps) {
+export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: WorkRecordFormProps) {
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [rows, setRows] = useState<WorkRecordRow[]>([
     { 
       id: '1', 
-      workerId: '', 
       workerName: '', 
       siteName: '', 
-      workHours: 1,
-      equipment: createEmptyEquipment()
+      workHours: 1
     }
   ]);
+  const [equipment, setEquipment] = useState<Record<EquipmentType, number>>(createEmptyEquipment());
+  const [notes, setNotes] = useState<string>('');
+
+  // 최근 기록 불러오기 (새로 작성할 때만)
+  useEffect(() => {
+    if (isOpen && !record && teamId) {
+      const loadLastRecord = async () => {
+        try {
+          const lastWorkRecords = await getLastWorkRecords(teamId);
+          const lastEquipmentRecords = await getLastEquipmentRecords(teamId);
+          
+          // 작업자 정보 불러오기 (최근 날짜의 모든 작업자)
+          if (lastWorkRecords.length > 0) {
+            const workerRows = lastWorkRecords.map((wr, index) => ({
+              id: (index + 1).toString(),
+              workerName: wr.workerName,
+              siteName: wr.siteName,
+              workHours: wr.workHours
+            }));
+            setRows(workerRows);
+            
+            // 비고 불러오기 (첫 번째 레코드의 비고 사용)
+            if (lastWorkRecords[0].notes) {
+              setNotes(lastWorkRecords[0].notes);
+            }
+          }
+          
+          // 장비 정보 불러오기
+          if (lastEquipmentRecords.length > 0) {
+            const equipmentData = createEmptyEquipment();
+            lastEquipmentRecords.forEach(equipRecord => {
+              if (equipRecord.equipmentType in equipmentData) {
+                equipmentData[equipRecord.equipmentType as EquipmentType] = equipRecord.quantity;
+              }
+            });
+            setEquipment(equipmentData);
+          }
+        } catch (error) {
+          console.error('Error loading last record:', error);
+        }
+      };
+      
+      loadLastRecord();
+    }
+  }, [isOpen, record, teamId]);
 
   useEffect(() => {
     if (record) {
       setDate(record.workDate);
       setRows([{
         id: '1',
-        workerId: record.workerId,
         workerName: record.workerName,
         siteName: record.siteName,
-        workHours: record.workHours,
-        equipment: createEmptyEquipment()
+        workHours: record.workHours
       }]);
+      setNotes(record.notes || '');
     } else {
       setDate(new Date().toISOString().split('T')[0]);
       setRows([{ 
         id: '1', 
-        workerId: '', 
         workerName: '', 
         siteName: '', 
-        workHours: 1,
-        equipment: createEmptyEquipment()
+        workHours: 1
       }]);
+      setEquipment(createEmptyEquipment());
+      setNotes('');
     }
   }, [record, isOpen]);
 
   const addRow = () => {
-    const newId = (Math.max(...rows.map(r => parseInt(r.id))) + 1).toString();
+    const newId = (Math.max(...rows.map(r => parseInt(r.id)), 0) + 1).toString();
     setRows([...rows, { 
       id: newId, 
-      workerId: '', 
       workerName: '', 
       siteName: '', 
-      workHours: 1,
-      equipment: createEmptyEquipment()
+      workHours: 1
     }]);
   };
 
@@ -93,42 +132,23 @@ export function WorkRecordForm({ isOpen, onClose, onSave, workers, record }: Wor
   const updateRow = (id: string, field: string, value: string | number) => {
     setRows(prevRows => prevRows.map(row => {
       if (row.id === id) {
-        if (field === 'workerId') {
-          const worker = workers.find(w => w.id === value);
-          return {
-            ...row,
-            workerId: value as string,
-            workerName: worker?.name || ''
-          };
-        }
-        
-        if (field.startsWith('equipment.')) {
-          // 'equipment.' 이후의 모든 문자열을 equipmentType으로 사용
-          // '3.5t'처럼 점이 포함된 경우를 위해 첫 번째 점만 제거
-          const equipmentType = field.substring('equipment.'.length) as EquipmentType;
-          // 정수만 허용 (장비 수량은 정수)
-          const numValue = typeof value === 'number' ? Math.floor(value) : (value === '' ? 0 : parseInt(value as string, 10));
-          const finalValue = isNaN(numValue) || numValue < 0 ? 0 : numValue;
-          
-          return {
-            ...row,
-            equipment: {
-              ...row.equipment,
-              [equipmentType]: finalValue
-            }
-          };
-        }
-        
         return { ...row, [field]: value };
       }
       return row;
     }));
   };
 
+  const updateEquipment = (equipmentType: EquipmentType, value: number) => {
+    setEquipment(prev => ({
+      ...prev,
+      [equipmentType]: value
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validRows = rows.filter(row => row.workerId && row.siteName && row.workHours > 0);
+    const validRows = rows.filter(row => row.workerName && row.siteName && row.workHours > 0);
     
     if (validRows.length === 0) {
       alert('최소 한 명의 작업자 정보를 입력해주세요.');
@@ -136,33 +156,33 @@ export function WorkRecordForm({ isOpen, onClose, onSave, workers, record }: Wor
     }
 
     const workRecords = validRows.map(row => ({
-      workerId: row.workerId,
+      workerId: '', // 작업자 ID는 더 이상 사용하지 않음
       workerName: row.workerName,
       siteName: row.siteName,
       workHours: row.workHours,
       workDate: date,
+      notes: notes,
       teamId: '',
       createdBy: ''
     }));
 
+    // 장비 레코드는 전체 팀 기준으로 하나만 생성
     const equipmentRecords: Omit<EquipmentRecord, 'id' | 'createdAt' | 'updatedAt'>[] = [];
-    validRows.forEach(row => {
-      EQUIPMENT_TYPES.forEach(equipType => {
-        const quantity = row.equipment[equipType];
-        if (quantity > 0) {
-          equipmentRecords.push({
-            workDate: date,
-            siteName: row.siteName,
-            equipmentType: equipType,
-            quantity: quantity,
-            teamId: '',
-            createdBy: ''
-          });
-        }
-      });
+    EQUIPMENT_TYPES.forEach(equipType => {
+      const quantity = equipment[equipType];
+      if (quantity > 0) {
+        equipmentRecords.push({
+          workDate: date,
+          siteName: '', // 장비는 전체 팀 기준이므로 현장명 없음
+          equipmentType: equipType,
+          quantity: quantity,
+          teamId: '',
+          createdBy: ''
+        });
+      }
     });
 
-    onSave(workRecords, equipmentRecords);
+    onSave(workRecords, equipmentRecords, notes);
   };
 
   return (
@@ -183,6 +203,7 @@ export function WorkRecordForm({ isOpen, onClose, onSave, workers, record }: Wor
             />
           </div>
 
+          {/* 작업자 정보 섹션 */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <Label className="text-base font-semibold">작업자 정보</Label>
@@ -201,14 +222,6 @@ export function WorkRecordForm({ isOpen, onClose, onSave, workers, record }: Wor
                     <th className="p-3 text-left text-sm font-medium min-w-[150px]">작업자명</th>
                     <th className="p-3 text-left text-sm font-medium min-w-[150px]">현장명</th>
                     <th className="p-3 text-left text-sm font-medium min-w-[80px]">공수</th>
-                    <th className="p-3 text-left text-sm font-medium min-w-[80px]">6w</th>
-                    <th className="p-3 text-left text-sm font-medium min-w-[80px]">3w</th>
-                    <th className="p-3 text-left text-sm font-medium min-w-[80px]">035</th>
-                    <th className="p-3 text-left text-sm font-medium min-w-[80px]">덤프</th>
-                    <th className="p-3 text-left text-sm font-medium min-w-[80px]">1t</th>
-                    <th className="p-3 text-left text-sm font-medium min-w-[80px]">3.5t</th>
-                    <th className="p-3 text-left text-sm font-medium min-w-[80px]">살수차</th>
-                    <th className="p-3 text-left text-sm font-medium min-w-[80px]">모범수</th>
                     <th className="p-3 text-left text-sm font-medium min-w-[60px]"></th>
                   </tr>
                 </thead>
@@ -216,28 +229,18 @@ export function WorkRecordForm({ isOpen, onClose, onSave, workers, record }: Wor
                   {rows.map((row) => (
                     <tr key={row.id}>
                       <td className="p-3">
-                        <Select
-                          value={row.workerId}
-                          onValueChange={(value) => updateRow(row.id, 'workerId', value)}
+                        <Input
+                          value={row.workerName}
+                          onChange={(e) => updateRow(row.id, 'workerName', e.target.value)}
+                          placeholder="이름"
                           required
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="선택" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {workers.map((worker) => (
-                              <SelectItem key={worker.id} value={worker.id}>
-                                {worker.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        />
                       </td>
                       <td className="p-3">
                         <Input
                           value={row.siteName}
                           onChange={(e) => updateRow(row.id, 'siteName', e.target.value)}
-                          placeholder="현장명"
+                          placeholder="현장"
                           required
                         />
                       </td>
@@ -245,45 +248,12 @@ export function WorkRecordForm({ isOpen, onClose, onSave, workers, record }: Wor
                         <Input
                           type="number"
                           value={row.workHours}
-                          onChange={(e) => updateRow(row.id, 'workHours', parseFloat(e.target.value))}
-                          min="0.5"
+                          onChange={(e) => updateRow(row.id, 'workHours', parseFloat(e.target.value) || 0)}
+                          min="0"
                           step="0.5"
                           required
                         />
                       </td>
-                      {EQUIPMENT_TYPES.map((equipType) => {
-                        const currentValue = row.equipment[equipType];
-                        // 3.5t 등 점(.)이 포함된 필드명을 안전하게 처리
-                        const inputId = `equipment-${row.id}-${equipType.replace(/\./g, '-')}`;
-                        return (
-                          <td key={equipType} className="p-3">
-                            <Input
-                              id={inputId}
-                              type="number"
-                              min="0"
-                              step="1"
-                              value={currentValue === 0 ? '' : currentValue.toString()}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                // 숫자만 허용 (빈 문자열 또는 양수 정수)
-                                if (value === '' || /^\d+$/.test(value)) {
-                                  const numValue = value === '' ? 0 : parseInt(value, 10);
-                                  const fieldName = 'equipment.' + equipType;
-                                  updateRow(row.id, fieldName, isNaN(numValue) ? 0 : numValue);
-                                }
-                              }}
-                              onBlur={(e) => {
-                                // 포커스가 벗어날 때 빈 값이면 0으로 설정
-                                if (e.target.value === '') {
-                                  const fieldName = 'equipment.' + equipType;
-                                  updateRow(row.id, fieldName, 0);
-                                }
-                              }}
-                              placeholder="0"
-                            />
-                          </td>
-                        );
-                      })}
                       <td className="p-3">
                         {!record && rows.length > 1 && (
                           <Button
@@ -303,12 +273,66 @@ export function WorkRecordForm({ isOpen, onClose, onSave, workers, record }: Wor
             </div>
           </div>
 
+          {/* 장비 투입 섹션 */}
+          <div className="space-y-4">
+            <div>
+              <Label className="text-base font-semibold">장비 투입 (대수) - 전체 팀</Label>
+              <p className="text-sm text-muted-foreground mt-1">
+                이 날짜의 전체 팀 장비 투입 현황입니다.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-4 md:grid-cols-8 gap-4">
+              {EQUIPMENT_TYPES.map((equipType) => {
+                const currentValue = equipment[equipType];
+                const inputId = `equipment-${equipType.replace(/\./g, '-')}`;
+                return (
+                  <div key={equipType} className="space-y-2">
+                    <Label htmlFor={inputId} className="text-sm">{equipType}</Label>
+                    <Input
+                      id={inputId}
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={currentValue === 0 ? '' : currentValue.toString()}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '' || /^\d+$/.test(value)) {
+                          const numValue = value === '' ? 0 : parseInt(value, 10);
+                          updateEquipment(equipType, isNaN(numValue) ? 0 : numValue);
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (e.target.value === '') {
+                          updateEquipment(equipType, 0);
+                        }
+                      }}
+                      placeholder="0"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 비고 섹션 */}
+          <div className="space-y-2">
+            <Label htmlFor="notes">작업내용 및 특이사항</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="작업 내용을 입력하세요"
+              className="min-h-[100px] resize-y"
+            />
+          </div>
+
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
               취소
             </Button>
             <Button type="submit">
-              {record ? '수정' : '저장'}
+              {record ? '수정' : '공수 기록'}
             </Button>
           </div>
         </form>

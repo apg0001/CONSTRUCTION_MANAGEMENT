@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Users, FileText, BarChart3, LogOut } from 'lucide-react';
+import { Calendar, BarChart3, LogOut } from 'lucide-react';
 
 export default function Dashboard() {
   const { user, logout, isAdmin } = useAuth();
@@ -21,13 +21,6 @@ export default function Dashboard() {
       icon: Calendar,
       path: '/work-record',
       color: 'bg-blue-500',
-    },
-    {
-      title: '작업자 관리',
-      description: '작업자를 추가, 수정, 삭제합니다',
-      icon: Users,
-      path: '/workers',
-      color: 'bg-green-500',
     },
     {
       title: '월별 현황',
@@ -54,7 +47,7 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {menuItems.map((item) => (
             <Card
               key={item.path}
@@ -73,7 +66,7 @@ export default function Dashboard() {
         </div>
 
         {isAdmin && (
-          <Card className="mt-8">
+          <Card className="mt-8 max-w-4xl mx-auto">
             <CardHeader>
               <CardTitle>관리자 권한</CardTitle>
               <CardDescription>

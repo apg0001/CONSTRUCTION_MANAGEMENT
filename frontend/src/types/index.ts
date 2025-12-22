@@ -26,6 +26,7 @@ export interface WorkRecord {
   siteName: string;
   workDate: string;
   workHours: number;
+  notes?: string;
   teamId: string;
   createdBy: string;
   createdAt: string;

@@ -8,6 +8,7 @@ class WorkRecordCreate(BaseModel):
     site_name: str
     work_date: date
     work_hours: float
+    notes: str | None = None
     team_id: str
     created_by: str
 
@@ -17,6 +18,7 @@ class WorkRecordUpdate(BaseModel):
     worker_name: str
     site_name: str
     work_hours: float
+    notes: str | None = None
 
 
 class WorkRecordResponse(BaseModel):
@@ -26,6 +28,7 @@ class WorkRecordResponse(BaseModel):
     site_name: str
     work_date: date
     work_hours: float
+    notes: str | None
     team_id: str
     created_by: str
     created_at: datetime

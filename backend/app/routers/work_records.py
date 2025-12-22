@@ -60,6 +60,7 @@ def create_work_record(
         site_name=work_record.site_name,
         work_date=work_record.work_date,
         work_hours=work_record.work_hours,
+        notes=work_record.notes,
         team_id=work_record.team_id,
         created_by=work_record.created_by,
     )
@@ -118,6 +119,7 @@ def update_work_record(
     db_record.worker_name = work_record.worker_name
     db_record.site_name = work_record.site_name
     db_record.work_hours = work_record.work_hours
+    db_record.notes = work_record.notes
     db_record.updated_at = datetime.utcnow()
     
     db.commit()
