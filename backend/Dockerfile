@@ -38,6 +38,7 @@ EXPOSE 8000
 
 # Copy startup script
 COPY start.sh /app/start.sh
+# Set executable permission
 RUN chmod +x /app/start.sh
 
 # Run the startup script
