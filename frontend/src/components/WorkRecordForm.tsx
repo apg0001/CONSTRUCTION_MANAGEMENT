@@ -21,6 +21,7 @@ interface WorkRecordFormProps {
   onSave: (records: Omit<WorkRecord, 'id' | 'createdAt' | 'updatedAt'>[], equipmentData: Omit<EquipmentRecord, 'id' | 'createdAt' | 'updatedAt'>[], notes: string) => void;
   teamId: string;
   record?: WorkRecord;
+  selectedDate?: string;
 }
 
 const createEmptyEquipment = (): Record<EquipmentType, number> => ({
@@ -34,8 +35,8 @@ const createEmptyEquipment = (): Record<EquipmentType, number> => ({
   '모범수': 0
 });
 
-export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: WorkRecordFormProps) {
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
+export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record, selectedDate }: WorkRecordFormProps) {
+  const [date, setDate] = useState<string>(selectedDate || new Date().toISOString().split('T')[0]);
   const [rows, setRows] = useState<WorkRecordRow[]>([
     { 
       id: '1', 
@@ -48,12 +49,21 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
   const [notes, setNotes] = useState<string>('');
 
   // 최근 기록 불러오기 (새로 작성할 때만)
+  // 날짜는 selectedDate prop 사용 (현재 조회 날짜)
+  // 팀 선택 후 공수 기록 추가 시 해당 팀의 최근 기록을 불러옴
   useEffect(() => {
     if (isOpen && !record && teamId && teamId.trim() !== '') {
+      // 날짜를 현재 조회 날짜로 설정
+      if (selectedDate) {
+        setDate(selectedDate);
+      }
       const loadLastRecord = async () => {
         try {
+          console.log('Loading last records for teamId:', teamId);
           const lastWorkRecords = await getLastWorkRecords(teamId);
           const lastEquipmentRecords = await getLastEquipmentRecords(teamId);
+          
+          console.log('Loaded last work records:', lastWorkRecords.length, 'equipment records:', lastEquipmentRecords.length);
           
           // 작업자 정보 불러오기 (최근 날짜의 모든 작업자)
           if (lastWorkRecords.length > 0) {
@@ -69,6 +79,15 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
             if (lastWorkRecords[0].notes) {
               setNotes(lastWorkRecords[0].notes);
             }
+          } else {
+            // 최근 기록이 없으면 빈 행으로 초기화
+            setRows([{ 
+              id: '1', 
+              workerName: '', 
+              siteName: '', 
+              workHours: 1
+            }]);
+            setNotes('');
           }
           
           // 장비 정보 불러오기
@@ -80,6 +99,9 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
               }
             });
             setEquipment(equipmentData);
+          } else {
+            // 최근 기록이 없으면 빈 장비 데이터로 초기화
+            setEquipment(createEmptyEquipment());
           }
         } catch (error) {
           console.error('Error loading last record:', error);
@@ -88,7 +110,7 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
       
       loadLastRecord();
     }
-  }, [isOpen, record, teamId]);
+  }, [isOpen, record, teamId, selectedDate]);
 
   useEffect(() => {
     if (record) {
@@ -101,7 +123,8 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
       }]);
       setNotes(record.notes || '');
     } else {
-      setDate(new Date().toISOString().split('T')[0]);
+      // 추가 모드: 현재 조회 날짜 사용
+      setDate(selectedDate || new Date().toISOString().split('T')[0]);
       setRows([{ 
         id: '1', 
         workerName: '', 
@@ -111,7 +134,7 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record }: Work
       setEquipment(createEmptyEquipment());
       setNotes('');
     }
-  }, [record, isOpen]);
+  }, [record, isOpen, selectedDate]);
 
   const addRow = () => {
     const newId = (Math.max(...rows.map(r => parseInt(r.id)), 0) + 1).toString();

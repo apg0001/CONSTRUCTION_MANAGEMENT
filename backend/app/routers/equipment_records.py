@@ -47,20 +47,29 @@ def create_equipment_record(
     # Role-based access control
     if current_user.get("role") == "manager":
         user_team_id = current_user.get("team_id")
-        if user_team_id and equipment_record.team_id != user_team_id:
-            raise HTTPException(
-                status_code=403,
-                detail="Managers can only create records for their own team"
-            )
+        # 팀 계정의 경우 user_team_id를 사용 (equipment_record.team_id가 없거나 다를 경우)
+        if user_team_id:
+            if equipment_record.team_id and equipment_record.team_id != user_team_id:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Managers can only create records for their own team"
+                )
+            # equipment_record.team_id가 없거나 빈 문자열이면 user_team_id 사용
+            final_team_id = equipment_record.team_id if equipment_record.team_id else user_team_id
+        else:
+            final_team_id = equipment_record.team_id
+    else:
+        # 관리자 계정의 경우 equipment_record.team_id 사용
+        final_team_id = equipment_record.team_id
     
     # Log for debugging
-    print(f"Creating equipment record - team_id: {equipment_record.team_id}, equipment_type: {equipment_record.equipment_type}, current_user role: {current_user.get('role')}, current_user team_id: {current_user.get('team_id')}")
+    print(f"Creating equipment record - team_id: {final_team_id}, equipment_type: {equipment_record.equipment_type}, current_user role: {current_user.get('role')}, current_user team_id: {current_user.get('team_id')}, equipment_record.team_id: {equipment_record.team_id}")
     
     # 같은 날짜, 같은 장비 타입, 같은 팀의 기존 레코드 찾기
     existing_record = db.query(EquipmentRecord).filter(
         EquipmentRecord.work_date == equipment_record.work_date,
         EquipmentRecord.equipment_type == equipment_record.equipment_type,
-        EquipmentRecord.team_id == equipment_record.team_id
+        EquipmentRecord.team_id == final_team_id
     ).first()
     
     if existing_record:
@@ -77,7 +86,7 @@ def create_equipment_record(
             work_date=equipment_record.work_date,
             equipment_type=equipment_record.equipment_type,
             quantity=equipment_record.quantity,
-            team_id=equipment_record.team_id,
+            team_id=final_team_id,
             created_by=equipment_record.created_by,
         )
         db.add(db_equipment_record)

@@ -53,14 +53,23 @@ def create_work_record(
     # Role-based access control
     if current_user.get("role") == "manager":
         user_team_id = current_user.get("team_id")
-        if user_team_id and work_record.team_id != user_team_id:
-            raise HTTPException(
-                status_code=403,
-                detail="Managers can only create records for their own team"
-            )
+        # 팀 계정의 경우 user_team_id를 사용 (work_record.team_id가 없거나 다를 경우)
+        if user_team_id:
+            if work_record.team_id and work_record.team_id != user_team_id:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Managers can only create records for their own team"
+                )
+            # work_record.team_id가 없거나 빈 문자열이면 user_team_id 사용
+            final_team_id = work_record.team_id if work_record.team_id else user_team_id
+        else:
+            final_team_id = work_record.team_id
+    else:
+        # 관리자 계정의 경우 work_record.team_id 사용
+        final_team_id = work_record.team_id
     
     # Log for debugging
-    print(f"Creating work record - team_id: {work_record.team_id}, worker_name: {work_record.worker_name}, current_user role: {current_user.get('role')}, current_user team_id: {current_user.get('team_id')}")
+    print(f"Creating work record - team_id: {final_team_id}, worker_name: {work_record.worker_name}, current_user role: {current_user.get('role')}, current_user team_id: {current_user.get('team_id')}, work_record.team_id: {work_record.team_id}")
     
     db_work_record = WorkRecord(
         id=str(uuid.uuid4()),
@@ -70,7 +79,7 @@ def create_work_record(
         work_date=work_record.work_date,
         work_hours=work_record.work_hours,
         notes=work_record.notes,
-        team_id=work_record.team_id,
+        team_id=final_team_id,
         created_by=work_record.created_by,
     )
     db.add(db_work_record)

@@ -389,7 +389,16 @@ export default function WorkRecordPage() {
                 </SelectContent>
               </Select>
             )}
-            <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto">
+            <Button 
+              onClick={() => {
+                if (isAdmin && !selectedTeamId) {
+                  toast.error('팀을 먼저 선택해주세요');
+                  return;
+                }
+                setShowForm(true);
+              }} 
+              className="w-full sm:w-auto"
+            >
               <Plus className="mr-2 h-4 w-4" />
               <span className="hidden sm:inline">공수 기록 추가</span>
               <span className="sm:hidden">추가</span>
@@ -581,6 +590,7 @@ export default function WorkRecordPage() {
         onSave={handleSave}
         teamId={isAdmin ? selectedTeamId : user?.teamId || ''}
         record={editingRecord}
+        selectedDate={selectedDate.toISOString().split('T')[0]}
       />
 
       {/* 장비 기록 수정 다이얼로그 */}
