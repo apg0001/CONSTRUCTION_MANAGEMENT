@@ -3,10 +3,13 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date, datetime
 import uuid
+import logging
 from app.database import get_db
 from app.models.work_record import WorkRecord
 from app.schemas.work_record import WorkRecordCreate, WorkRecordUpdate, WorkRecordResponse
 from app.security import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/work-records", tags=["work-records"])
 
@@ -21,15 +24,20 @@ def get_work_records(
     """Get work records by team ID and optional date"""
     query = db.query(WorkRecord)
     
+    # 디버깅: current_user 전체 내용 확인
+    logger.info(f"get_work_records - DEBUG: current_user: {current_user}")
+    logger.info(f"get_work_records - DEBUG: current_user.get('role'): {current_user.get('role')}")
+    logger.info(f"get_work_records - DEBUG: current_user.get('role') == 'manager': {current_user.get('role') == 'manager'}")
+    
     # Role-based filtering
     if current_user.get("role") == "manager":
         # Managers can only see their team's records
         user_team_id = current_user.get("team_id")
-        print(f"get_work_records - manager role, user_team_id from token: {user_team_id} (type: {type(user_team_id)}), team_id param: {team_id} (type: {type(team_id) if team_id else None}), current_user keys: {list(current_user.keys())}")
+        logger.info(f"get_work_records - manager role, user_team_id from token: {user_team_id} (type: {type(user_team_id)}), team_id param: {team_id} (type: {type(team_id) if team_id else None}), current_user keys: {list(current_user.keys())}")
         
         # team_id가 None이거나 빈 문자열이면 빈 결과 반환
         if not user_team_id or (isinstance(user_team_id, str) and not user_team_id.strip()):
-            print(f"get_work_records - WARNING: manager role but no team_id in token! user_team_id: {user_team_id}")
+            logger.warning(f"get_work_records - WARNING: manager role but no team_id in token! user_team_id: {user_team_id}")
             return []
         
         # 문자열로 변환하여 비교 (타입 불일치 방지)
@@ -39,17 +47,17 @@ def get_work_records(
         if team_id:
             team_id_str = str(team_id).strip()
             if team_id_str != user_team_id_str:
-                print(f"get_work_records - WARNING: manager tried to access different team! user_team_id: {user_team_id_str}, requested team_id: {team_id_str}")
+                logger.warning(f"get_work_records - WARNING: manager tried to access different team! user_team_id: {user_team_id_str}, requested team_id: {team_id_str}")
                 raise HTTPException(
                     status_code=403,
                     detail="You can only access your own team's records"
                 )
             # 검증 통과: 전달된 team_id 사용
-            print(f"get_work_records - Filtering by team_id: {team_id_str}")
+            logger.info(f"get_work_records - Filtering by team_id: {team_id_str}")
             query = query.filter(WorkRecord.team_id == team_id_str)
         else:
             # team_id 파라미터가 없으면 JWT의 team_id 사용
-            print(f"get_work_records - Filtering by user_team_id from token: {user_team_id_str}")
+            logger.info(f"get_work_records - Filtering by user_team_id from token: {user_team_id_str}")
             query = query.filter(WorkRecord.team_id == user_team_id_str)
     elif current_user.get("role") == "admin":
         # Admins can filter by team_id parameter
@@ -64,14 +72,14 @@ def get_work_records(
         query = query.filter(WorkRecord.work_date == work_date)
     
     # Log for debugging
-    print(f"get_work_records - current_user role: {current_user.get('role')}, team_id param: {team_id}, work_date: {work_date}")
+    logger.info(f"get_work_records - current_user role: {current_user.get('role')}, team_id param: {team_id}, work_date: {work_date}")
     results = query.order_by(WorkRecord.work_date.desc()).all()
-    print(f"get_work_records - found {len(results)} records")
+    logger.info(f"get_work_records - found {len(results)} records")
     if results:
-        print(f"Sample record - id: {results[0].id}, team_id: {results[0].team_id}, worker_name: {results[0].worker_name}")
+        logger.info(f"Sample record - id: {results[0].id}, team_id: {results[0].team_id}, worker_name: {results[0].worker_name}")
         # 모든 결과의 team_id 확인
         team_ids_in_results = [r.team_id for r in results]
-        print(f"get_work_records - All team_ids in results: {set(team_ids_in_results)}")
+        logger.info(f"get_work_records - All team_ids in results: {set(team_ids_in_results)}")
     return results
 
 

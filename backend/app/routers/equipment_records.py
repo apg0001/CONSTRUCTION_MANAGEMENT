@@ -21,6 +21,11 @@ def get_equipment_records(
     """Get equipment records by team ID and optional date"""
     query = db.query(EquipmentRecord)
     
+    # 디버깅: current_user 전체 내용 확인
+    print(f"get_equipment_records - DEBUG: current_user: {current_user}")
+    print(f"get_equipment_records - DEBUG: current_user.get('role'): {current_user.get('role')}")
+    print(f"get_equipment_records - DEBUG: current_user.get('role') == 'manager': {current_user.get('role') == 'manager'}")
+    
     # Role-based filtering
     if current_user.get("role") == "manager":
         # Managers can only see their team's records
