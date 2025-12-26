@@ -61,8 +61,19 @@ export default function MonthlyReport() {
   const loadMonthlyData = async () => {
     setIsLoading(true);
     try {
+      // 관리자 계정: 선택한 팀 ID를 파라미터로 전달
+      // 팀 계정(manager): 자신의 팀 ID를 파라미터로 전달 (백엔드에서 JWT와 비교하여 검증)
       const teamId = isAdmin ? selectedTeamId : user?.teamId;
-      if (!teamId) {
+      
+      if (isAdmin && !selectedTeamId) {
+        setWorkerSummaries([]);
+        setEquipmentSummaries([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      // 팀 계정도 teamId가 없으면 조회 불가
+      if (!isAdmin && !teamId) {
         setWorkerSummaries([]);
         setEquipmentSummaries([]);
         setIsLoading(false);
@@ -72,7 +83,8 @@ export default function MonthlyReport() {
       const allRecords = await getWorkRecords(teamId);
       const allEquipment = await getEquipmentRecords(teamId);
       // 팀명 찾기: teams 배열에서 찾거나, user의 teamName 사용
-      let teamName = teams.find(t => t.id === teamId)?.name || '';
+      const actualTeamId = isAdmin ? selectedTeamId : user?.teamId;
+      let teamName = teams.find(t => t.id === actualTeamId)?.name || '';
       if (!teamName && user?.teamName) {
         teamName = user.teamName;
       }

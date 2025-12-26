@@ -84,13 +84,20 @@ export default function WorkRecordPage() {
     try {
       const dateStr = selectedDate.toISOString().split('T')[0];
       // 관리자 계정: 선택한 팀 ID를 파라미터로 전달
-      // 팀 계정(manager): teamId를 전달하지 않음 (백엔드에서 JWT 토큰의 team_id 사용)
-      const teamId = isAdmin ? selectedTeamId : undefined;
+      // 팀 계정(manager): 자신의 팀 ID를 파라미터로 전달 (백엔드에서 JWT와 비교하여 검증)
+      const teamId = isAdmin ? selectedTeamId : user?.teamId;
       
       console.log('loadRecords - isAdmin:', isAdmin, 'selectedTeamId:', selectedTeamId, 'user?.teamId:', user?.teamId, 'teamId param:', teamId, 'dateStr:', dateStr);
       
       // 관리자 계정은 팀 선택이 필요하지만, 팀 계정은 항상 자신의 팀 기록만 조회
       if (isAdmin && !selectedTeamId) {
+        setWorkRecords([]);
+        setEquipmentRecords([]);
+        return;
+      }
+      
+      // 팀 계정도 teamId가 없으면 조회 불가
+      if (!isAdmin && !teamId) {
         setWorkRecords([]);
         setEquipmentRecords([]);
         return;
@@ -595,6 +602,7 @@ export default function WorkRecordPage() {
         teamId={isAdmin ? selectedTeamId : user?.teamId || ''}
         record={editingRecord}
         selectedDate={selectedDate.toISOString().split('T')[0]}
+        isAdmin={isAdmin}
       />
 
       {/* 장비 기록 수정 다이얼로그 */}

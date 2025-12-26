@@ -25,13 +25,26 @@ def get_work_records(
     if current_user.get("role") == "manager":
         # Managers can only see their team's records
         user_team_id = current_user.get("team_id")
-        print(f"get_work_records - manager role, user_team_id from token: {user_team_id}, current_user: {current_user}")
-        if user_team_id:
-            query = query.filter(WorkRecord.team_id == user_team_id)
-        else:
+        print(f"get_work_records - manager role, user_team_id from token: {user_team_id}, team_id param: {team_id}, current_user: {current_user}")
+        
+        if not user_team_id:
             # team_id가 없으면 빈 결과 반환 (보안상 안전)
             print(f"get_work_records - WARNING: manager role but no team_id in token!")
             return []
+        
+        # 전달된 team_id 파라미터가 있으면 JWT의 team_id와 비교하여 검증
+        if team_id:
+            if team_id != user_team_id:
+                print(f"get_work_records - WARNING: manager tried to access different team! user_team_id: {user_team_id}, requested team_id: {team_id}")
+                raise HTTPException(
+                    status_code=403,
+                    detail="You can only access your own team's records"
+                )
+            # 검증 통과: 전달된 team_id 사용
+            query = query.filter(WorkRecord.team_id == team_id)
+        else:
+            # team_id 파라미터가 없으면 JWT의 team_id 사용
+            query = query.filter(WorkRecord.team_id == user_team_id)
     elif current_user.get("role") == "admin":
         # Admins can filter by team_id parameter
         if team_id:

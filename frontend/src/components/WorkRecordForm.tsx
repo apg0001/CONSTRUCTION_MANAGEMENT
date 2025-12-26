@@ -22,6 +22,7 @@ interface WorkRecordFormProps {
   teamId: string;
   record?: WorkRecord;
   selectedDate?: string;
+  isAdmin?: boolean;
 }
 
 const createEmptyEquipment = (): Record<EquipmentType, number> => ({
@@ -35,7 +36,7 @@ const createEmptyEquipment = (): Record<EquipmentType, number> => ({
   '모범수': 0
 });
 
-export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record, selectedDate }: WorkRecordFormProps) {
+export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record, selectedDate, isAdmin = false }: WorkRecordFormProps) {
   const [date, setDate] = useState<string>(selectedDate || new Date().toISOString().split('T')[0]);
   const [rows, setRows] = useState<WorkRecordRow[]>([
     { 
@@ -59,7 +60,9 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record, select
       }
       const loadLastRecord = async () => {
         try {
-          console.log('Loading last records for teamId:', teamId);
+          // 관리자 계정: 선택한 teamId를 파라미터로 전달
+          // 팀 계정(manager): 자신의 teamId를 파라미터로 전달 (백엔드에서 JWT와 비교하여 검증)
+          console.log('Loading last records - isAdmin:', isAdmin, 'teamId:', teamId);
           const lastWorkRecords = await getLastWorkRecords(teamId);
           const lastEquipmentRecords = await getLastEquipmentRecords(teamId);
           

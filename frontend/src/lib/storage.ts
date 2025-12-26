@@ -296,6 +296,8 @@ const convertWorker = (worker: any): Worker => ({
 export const getWorkRecords = async (teamId?: string): Promise<WorkRecord[]> => {
   try {
     let records: any[];
+    // teamId가 있으면 쿼리 파라미터로 전달 (관리자 계정용)
+    // 팀 계정(manager)인 경우는 백엔드에서 JWT 토큰의 team_id를 사용하므로 파라미터 전달 불필요
     if (teamId) {
       records = await apiCall(`/work-records?team_id=${teamId}`);
     } else {
@@ -386,7 +388,7 @@ export const getLastWorkRecord = async (teamId: string): Promise<WorkRecord | nu
   }
 };
 
-export const getLastWorkRecords = async (teamId: string): Promise<WorkRecord[]> => {
+export const getLastWorkRecords = async (teamId?: string): Promise<WorkRecord[]> => {
   try {
     const records = await getWorkRecords(teamId);
     if (records.length === 0) return [];
@@ -414,6 +416,8 @@ export const getLastWorkRecords = async (teamId: string): Promise<WorkRecord[]> 
 export const getEquipmentRecords = async (teamId?: string): Promise<EquipmentRecord[]> => {
   try {
     let records: any[];
+    // teamId가 있으면 쿼리 파라미터로 전달 (관리자 계정용)
+    // 팀 계정(manager)인 경우는 백엔드에서 JWT 토큰의 team_id를 사용하므로 파라미터 전달 불필요
     if (teamId) {
       records = await apiCall(`/equipment-records?team_id=${teamId}`);
     } else {
@@ -491,7 +495,7 @@ export const getEquipmentRecordsByDate = async (
 };
 
 export const getLastEquipmentRecords = async (
-  teamId: string
+  teamId?: string
 ): Promise<EquipmentRecord[]> => {
   try {
     const records = await getEquipmentRecords(teamId);
