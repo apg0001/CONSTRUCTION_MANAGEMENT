@@ -357,6 +357,8 @@ export const getWorkRecordsByDate = async (
 ): Promise<WorkRecord[]> => {
   try {
     let records: any[];
+    // teamId가 있으면 쿼리 파라미터로 전달 (관리자 계정용)
+    // 팀 계정(manager)인 경우는 백엔드에서 JWT 토큰의 team_id를 사용하므로 파라미터 전달 불필요
     if (teamId) {
       records = await apiCall(`/work-records?team_id=${teamId}&work_date=${date}`);
     } else {
@@ -473,6 +475,8 @@ export const getEquipmentRecordsByDate = async (
 ): Promise<EquipmentRecord[]> => {
   try {
     let records: any[];
+    // teamId가 있으면 쿼리 파라미터로 전달 (관리자 계정용)
+    // 팀 계정(manager)인 경우는 백엔드에서 JWT 토큰의 team_id를 사용하므로 파라미터 전달 불필요
     if (teamId) {
       records = await apiCall(`/equipment-records?team_id=${teamId}&work_date=${date}`);
     } else {

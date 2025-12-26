@@ -197,7 +197,7 @@ export function WorkRecordForm({ isOpen, onClose, onSave, teamId, record, select
       workDate: date,
       notes: notes,
       teamId: teamId, // teamId prop 사용
-      createdBy: ''
+      createdBy: '' // handleSave에서 user?.email로 덮어씀
     }));
 
     // 장비 레코드는 수정 모드에서는 제외, 추가 모드에서만 생성

@@ -83,20 +83,24 @@ export default function WorkRecordPage() {
     setIsLoading(true);
     try {
       const dateStr = selectedDate.toISOString().split('T')[0];
-      const teamId = isAdmin ? selectedTeamId : user?.teamId;
+      // 관리자 계정: 선택한 팀 ID를 파라미터로 전달
+      // 팀 계정(manager): teamId를 전달하지 않음 (백엔드에서 JWT 토큰의 team_id 사용)
+      const teamId = isAdmin ? selectedTeamId : undefined;
       
-      console.log('loadRecords - isAdmin:', isAdmin, 'selectedTeamId:', selectedTeamId, 'user?.teamId:', user?.teamId, 'teamId:', teamId, 'dateStr:', dateStr);
+      console.log('loadRecords - isAdmin:', isAdmin, 'selectedTeamId:', selectedTeamId, 'user?.teamId:', user?.teamId, 'teamId param:', teamId, 'dateStr:', dateStr);
       
-      if (teamId) {
-        const works = await getWorkRecordsByDate(dateStr, teamId);
-        const equipment = await getEquipmentRecordsByDate(dateStr, teamId);
-        console.log('Loaded records - works:', works.length, 'equipment:', equipment.length, 'works sample:', works.slice(0, 2));
-        setWorkRecords(works);
-        setEquipmentRecords(equipment);
-      } else {
+      // 관리자 계정은 팀 선택이 필요하지만, 팀 계정은 항상 자신의 팀 기록만 조회
+      if (isAdmin && !selectedTeamId) {
         setWorkRecords([]);
         setEquipmentRecords([]);
+        return;
       }
+      
+      const works = await getWorkRecordsByDate(dateStr, teamId);
+      const equipment = await getEquipmentRecordsByDate(dateStr, teamId);
+      console.log('Loaded records - works:', works.length, 'equipment:', equipment.length, 'works sample:', works.slice(0, 2));
+      setWorkRecords(works);
+      setEquipmentRecords(equipment);
     } catch (error) {
       console.error('Error loading records:', error);
       toast.error('기록을 불러올 수 없습니다');

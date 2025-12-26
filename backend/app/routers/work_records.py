@@ -25,11 +25,21 @@ def get_work_records(
     if current_user.get("role") == "manager":
         # Managers can only see their team's records
         user_team_id = current_user.get("team_id")
+        print(f"get_work_records - manager role, user_team_id from token: {user_team_id}, current_user: {current_user}")
         if user_team_id:
             query = query.filter(WorkRecord.team_id == user_team_id)
-    elif team_id:
-        # Admins can filter by team_id
-        query = query.filter(WorkRecord.team_id == team_id)
+        else:
+            # team_id가 없으면 빈 결과 반환 (보안상 안전)
+            print(f"get_work_records - WARNING: manager role but no team_id in token!")
+            return []
+    elif current_user.get("role") == "admin":
+        # Admins can filter by team_id parameter
+        if team_id:
+            query = query.filter(WorkRecord.team_id == team_id)
+        # team_id가 없으면 모든 기록 반환 (관리자 권한)
+    else:
+        # 다른 역할은 빈 결과 반환
+        return []
     
     if work_date:
         query = query.filter(WorkRecord.work_date == work_date)
@@ -61,11 +71,20 @@ def create_work_record(
                     detail="Managers can only create records for their own team"
                 )
             # work_record.team_id가 없거나 빈 문자열이면 user_team_id 사용
-            final_team_id = work_record.team_id if work_record.team_id else user_team_id
+            final_team_id = work_record.team_id if (work_record.team_id and work_record.team_id.strip()) else user_team_id
         else:
-            final_team_id = work_record.team_id
+            # user_team_id가 없으면 에러 (팀 계정은 반드시 team_id가 있어야 함)
+            raise HTTPException(
+                status_code=400,
+                detail="Team ID is required for manager accounts"
+            )
     else:
-        # 관리자 계정의 경우 work_record.team_id 사용
+        # 관리자 계정의 경우 work_record.team_id 사용 (필수)
+        if not work_record.team_id or not work_record.team_id.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="Team ID is required"
+            )
         final_team_id = work_record.team_id
     
     # Log for debugging
